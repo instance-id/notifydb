@@ -1,0 +1,2 @@
+[database]
+DATABASE_URL = "file:/home/mosthated/.files/notifydb/test.db"

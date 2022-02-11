@@ -1,0 +1,15 @@
+[package]
+name    = "notifydb_listener"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dbus        = "0.9.5"
+chrono      = "0.4"
+dotenv      = "0.15"
+lazy_static = "1.4.0"
+notifydblib = { version = "0.0.1", path = "../notifydblib" }
+log          = "0.4"
+simplelog    = { version = "^0.11.0", features = ["paris"] }
