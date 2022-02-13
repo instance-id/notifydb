@@ -15,8 +15,7 @@ class PageContainer extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(25),
       color: Colors.grey.shade100,
-      child: DefaultTextStyle.merge(
-          style: TextStyle(color: Colors.grey[900]), child: child),
+      child: DefaultTextStyle.merge(style: TextStyle(color: Colors.grey[900]), child: child),
     );
   }
 }
@@ -32,8 +31,7 @@ class PageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.red, width: 2))),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.red, width: 2))),
       padding: EdgeInsets.only(bottom: 10),
       child: DefaultTextStyle.merge(
         style: TextStyle(fontSize: 20),

@@ -1,4 +1,3 @@
-use notifydblib::{establish_connection, NotificationMsg};
 use std::{thread, time::Duration};
 
 use nativeshell::{

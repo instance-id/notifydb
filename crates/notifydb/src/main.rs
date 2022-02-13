@@ -22,7 +22,8 @@ fn main() -> () {
     exec_bundle();
     register_observatory_listener("notifydb".into());
 
-    env_logger::builder().format_timestamp(None).init();
+    notifydblib::init_logging();
+    // env_logger::builder().format_timestamp(None).init();
 
     let context = Context::new(ContextOptions {
         app_namespace: "notifydb".into(),

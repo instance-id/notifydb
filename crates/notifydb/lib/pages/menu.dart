@@ -31,9 +31,7 @@ class _MenuPageState extends State<MenuPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              decoration: BoxDecoration(
-                  border: Border.all(color: Colors.purple, width: 1),
-                  color: Colors.purple.withOpacity(0.15)),
+              decoration: BoxDecoration(border: Border.all(color: Colors.purple, width: 1), color: Colors.purple.withOpacity(0.15)),
               child: Column(
                 children: [
                   MenuBar(
@@ -42,10 +40,8 @@ class _MenuPageState extends State<MenuPage> {
                   ),
                   if (Platform.isMacOS)
                     Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      child: Text(
-                          'Look up! On macOS the MenuBar is at the top of screen.'),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      child: Text('Look up! On macOS the MenuBar is at the top of screen.'),
                     )
                 ],
               ),
@@ -134,8 +130,7 @@ class _MenuPageState extends State<MenuPage> {
   // MenuBar
   //
 
-  Widget _buildMenuBarItem(
-      BuildContext context, Widget child, MenuItemState itemState) {
+  Widget _buildMenuBarItem(BuildContext context, Widget child, MenuItemState itemState) {
     Color background;
     Color foreground;
     switch (itemState) {
@@ -248,24 +243,21 @@ class _MenuPageState extends State<MenuPage> {
         MenuItem.separator(),
         MenuItem(
             title: 'Radio Item 1',
-            checkStatus:
-                radioValue == 0 ? CheckStatus.radioOn : CheckStatus.radioOff,
+            checkStatus: radioValue == 0 ? CheckStatus.radioOn : CheckStatus.radioOff,
             action: () {
               radioValue = 0;
               menu.update();
             }),
         MenuItem(
             title: 'Radio Item 2',
-            checkStatus:
-                radioValue == 1 ? CheckStatus.radioOn : CheckStatus.radioOff,
+            checkStatus: radioValue == 1 ? CheckStatus.radioOn : CheckStatus.radioOff,
             action: () {
               radioValue = 1;
               menu.update();
             }),
         MenuItem(
             title: 'Radio Item 3',
-            checkStatus:
-                radioValue == 2 ? CheckStatus.radioOn : CheckStatus.radioOff,
+            checkStatus: radioValue == 2 ? CheckStatus.radioOn : CheckStatus.radioOff,
             action: () {
               radioValue = 2;
               menu.update();

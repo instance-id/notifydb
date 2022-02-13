@@ -1,56 +1,35 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:nativeshell/nativeshell.dart';
+import 'package:notifydb/main.dart';
 
 import '../controllers/controller.dart';
+import '../services/app_services.dart';
+import '../widgets/table_view.dart';
 
-class Home extends WindowState {
+class Home extends StatelessWidget {
+  const Home({Key? key}) : super(key: key);
+
   @override
   Widget build(context) {
     // Instantiate your class using Get.put() to make it available for all "child" routes there.
     final c = Get.put(Controller());
+    var notification_count = getIt.get<AppServices>().notification_list.length;
 
+    // Use Obx(()=> to update Text() whenever count is changed.
     return IntrinsicWidth(
-        child: Scaffold(
-      // Use Obx(()=> to update Text() whenever count is changed.
-      appBar: AppBar(title: Obx(() => Text('Clicks: ${c.count}'))),
-
-      body: Center(
-          child: ElevatedButton(
-              child: const Text('Go to Other'), onPressed: () => null)),
-      // Get.to(Other())
-
-      floatingActionButton: FloatingActionButton(
-          onPressed: c.increment, child: const Icon(Icons.add)),
-    ));
+      child: Scaffold(
+        appBar: AppBar(
+          toolbarHeight: 40,
+          // --| Notification number -------
+          title:  Text('Notifications: $notification_count'),
+          // title: Obx(() => Text('Notifications: ${c.count}')),
+        ),
+        body: Center(
+          // --| Table View ----------------
+          child: PlutoGridExamplePage(),
+        ), // Get.to(Other())
+        floatingActionButton: FloatingActionButton(onPressed: c.increment, child: const Icon(Icons.add)),
+      ),
+    );
   }
-
-  @override
-  WindowSizingMode get windowSizingMode =>
-      WindowSizingMode.atLeastIntrinsicSize;
-
-  @override
-  Future<void> initializeWindow(Size intrinsicContentSize) async {
-    if (Platform.isMacOS) {
-      await Menu(_buildMenu).setAsAppMenu();
-    }
-    await window.setTitle('NativeShell Examples');
-    return super.initializeWindow(intrinsicContentSize);
-  }
-
-  // -- Build Menu -----------------------------------a
-  List<MenuItem> _buildMenu() => [
-        MenuItem.children(title: 'App', children: [
-          MenuItem.withRole(role: MenuItemRole.hide),
-          MenuItem.withRole(role: MenuItemRole.hideOtherApplications),
-          MenuItem.withRole(role: MenuItemRole.showAll),
-          MenuItem.separator(),
-          MenuItem.withRole(role: MenuItemRole.quitApplication),
-        ]),
-        MenuItem.children(title: 'Window', role: MenuRole.window, children: [
-          MenuItem.withRole(role: MenuItemRole.minimizeWindow),
-          MenuItem.withRole(role: MenuItemRole.zoomWindow),
-        ]),
-      ];
 }

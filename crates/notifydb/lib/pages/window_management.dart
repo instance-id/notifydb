@@ -16,8 +16,7 @@ class WindowManagementPage extends StatefulWidget {
   }
 }
 
-class WindowManagementPageState extends State<WindowManagementPage>
-    with WindowMethodCallHandlerMixin<WindowManagementPage> {
+class WindowManagementPageState extends State<WindowManagementPage> with WindowMethodCallHandlerMixin<WindowManagementPage> {
   Object? modalWindowResult;
 
   @override
@@ -26,10 +25,7 @@ class WindowManagementPageState extends State<WindowManagementPage>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         PageHeader(child: Text('Window Management Example')),
-        PageSourceLocation(locations: [
-          'lib/pages/window_management.dart',
-          'lib/pages/modal_window.dart'
-        ]),
+        PageSourceLocation(locations: ['lib/pages/window_management.dart', 'lib/pages/modal_window.dart']),
         PageBlurb(paragraphs: [
           'NativeShell lets you create, show, hide, position windows, set their attributes and style. '
               'You can also show windows as modal dialogs (sheets on macOS).',

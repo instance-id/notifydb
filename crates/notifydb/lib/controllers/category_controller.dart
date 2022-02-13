@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:notifydb/utils/logger.dart';
 
-class Controller extends GetxController {
+class CategoryController extends GetxController {
   final _channel = MethodChannel('example_channel');
 
   var count = 0.obs;

@@ -11,8 +11,7 @@ import 'package:notifydb/widgets/veil.dart';
 
 class MainWindowState extends WindowState {
   @override
-  WindowSizingMode get windowSizingMode =>
-      WindowSizingMode.atLeastIntrinsicSize;
+  WindowSizingMode get windowSizingMode => WindowSizingMode.atLeastIntrinsicSize;
 
   @override
   Future<void> initializeWindow(Size intrinsicContentSize) async {
@@ -49,7 +48,7 @@ class MainWindowState extends WindowState {
         Column(
           children: [
             AdwHeaderBar.minimalNativeshell(
-              window:  window,
+              window: window,
               start: [
                 Builder(
                   builder: (context) {

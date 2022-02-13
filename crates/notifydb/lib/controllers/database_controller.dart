@@ -2,11 +2,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-class PlatformController extends GetxController {
-  final _channel = MethodChannel('window_channel');
+import '../utils/logger.dart';
 
-  void WindowAction(String action) async {
-    final _ = await _channel.invokeMethod('window', action);
+class DatabaseController extends GetxController {
+  final _channel = MethodChannel('database_channel');
+
+  void queryDatabase(String query_string) async {
+    final result = await _channel.invokeMethod('query', query_string);
+    Logger.write(result);
   }
 
   void dispatchIntent(Intent intent) {
