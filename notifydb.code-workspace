@@ -1,0 +1,113 @@
+[
+    {
+        "type": "lldb",
+        "request": "launch",
+        "name": "Run executable 'notifydb'",
+        "cargo": {
+            "args": [
+                "run",
+                "--bin=notifydb",
+                "--package=notifydb"
+            ],
+            "filter": {
+                "name": "notifydb",
+                "kind": "bin"
+            }
+        },
+        "args": [],
+        "cwd": "${workspaceFolder}/crates/notifydb"
+    },
+    {
+        "type": "lldb",
+        "request": "launch",
+        "name": "Debug executable 'notifydb'",
+        "cargo": {
+            "args": [
+                "build",
+                "--bin=notifydb",
+                "--package=notifydb"
+            ],
+            "filter": {
+                "name": "notifydb",
+                "kind": "bin"
+            }
+        },
+        "args": [],
+        "cwd": "${workspaceFolder}"
+    },
+    {
+        "type": "lldb",
+        "request": "launch",
+        "name": "Debug unit tests in executable 'notifydb'",
+        "cargo": {
+            "args": [
+                "test",
+                "--no-run",
+                "--bin=notifydb",
+                "--package=notifydb"
+            ],
+            "filter": {
+                "name": "notifydb",
+                "kind": "bin"
+            }
+        },
+        "args": [],
+        "cwd": "${workspaceFolder}"
+    },
+    {
+        "type": "lldb",
+        "request": "launch",
+        "name": "Debug unit tests in library 'notifydblib'",
+        "cargo": {
+            "args": [
+                "test",
+                "--no-run",
+                "--lib",
+                "--package=notifydblib"
+            ],
+            "filter": {
+                "name": "notifydblib",
+                "kind": "lib"
+            }
+        },
+        "args": [],
+        "cwd": "${workspaceFolder}"
+    },
+    {
+        "type": "lldb",
+        "request": "launch",
+        "name": "Debug executable 'notifydb_listener'",
+        "cargo": {
+            "args": [
+                "build",
+                "--bin=notifydb_listener",
+                "--package=notifydb_listener"
+            ],
+            "filter": {
+                "name": "notifydb_listener",
+                "kind": "bin"
+            }
+        },
+        "args": [],
+        "cwd": "${workspaceFolder}"
+    },
+    {
+        "type": "lldb",
+        "request": "launch",
+        "name": "Debug unit tests in executable 'notifydb_listener'",
+        "cargo": {
+            "args": [
+                "test",
+                "--no-run",
+                "--bin=notifydb_listener",
+                "--package=notifydb_listener"
+            ],
+            "filter": {
+                "name": "notifydb_listener",
+                "kind": "bin"
+            }
+        },
+        "args": [],
+        "cwd": "${workspaceFolder}"
+    }
+]

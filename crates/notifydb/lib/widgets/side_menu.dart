@@ -12,20 +12,38 @@ class NavigationSideBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NavigationRail(
-      selectedIndex: selectedIndex,
-      onDestinationSelected: onIndexSelect,
-      labelType: NavigationRailLabelType.all,
-      destinations: [
-        NavigationRailDestination(
-          icon: Icon(Icons.all_inbox),
-          selectedIcon: Icon(Icons.all_inbox_outlined),
-          label: Text('View All'),
+    return Stack(
+      children: [
+        NavigationRail(
+          selectedIndex: selectedIndex,
+          onDestinationSelected: onIndexSelect,
+          labelType: NavigationRailLabelType.selected,
+
+          destinations: [
+            NavigationRailDestination(
+              icon: Icon(Icons.all_inbox),
+              selectedIcon: Icon(Icons.all_inbox_outlined),
+              label: Text('View All'),
+            ),
+            NavigationRailDestination(
+              icon: Icon(Icons.account_tree),
+              selectedIcon: Icon(Icons.account_tree_outlined),
+              label: Text('By Source'),
+            ),
+          ],
         ),
-        NavigationRailDestination(
-          icon: Icon(Icons.account_tree),
-          selectedIcon: Icon(Icons.account_tree_outlined),
-          label: Text('By Source'),
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 60,
+          child: Material(
+            child: IconButton(
+              iconSize: 25,
+              icon: Icon(Icons.settings),
+              onPressed: () => {},
+            ),
+          ),
         ),
       ],
     );

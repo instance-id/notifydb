@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+// ignore: unused_import
+import '../utils/logger.dart';
+
 class Notification {
   final String id;
   final String? appname;
@@ -21,7 +24,7 @@ class Notification {
 
   String modifyDate(String date) {
     var dateTime = DateTime.parse(date);
-    return dateTime.add(DateTime.parse(date).timeZoneOffset).toString();
+    return DateFormat('MM-dd-yyyy HH:mm:ss').format(dateTime.add(DateTime.parse(date).timeZoneOffset)).toString();
   }
 
   Notification(

@@ -19,7 +19,7 @@ Widget buildEntries(PlutoRow? row, BuildContext context) {
   });
 
   return Padding(
-    padding: const EdgeInsets.all(2.0),
+    padding: const EdgeInsets.all(8.0),
     child: Column(
       children: [
         // --| Item Header -------------------
@@ -50,11 +50,11 @@ void openDetail(PlutoRow? row, BuildContext context, PlutoGridStateManager state
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text('Notification Details'),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 1),
                       // --| Iterate each cell and add to hierarchy ------
                       // --|----------------------------------------------
                       buildEntries(row, context),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 1),
                       Center(
                         child: Wrap(
                           spacing: 10,

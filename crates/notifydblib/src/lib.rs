@@ -1,4 +1,6 @@
-use config::Config;
+mod schema;
+
+pub use config::*;
 use std::path::{Path, PathBuf};
 #[macro_use]
 extern crate lazy_static;
@@ -21,22 +23,23 @@ use std::fs::File;
 use std::str::FromStr;
 
 //region --| Database Schema ---------------
-mod schema {
-    table! {
-        notification_data {
-            id -> Integer,
-            sender -> Text,
-            title -> Nullable<Text>,
-            body -> Nullable<Text>,
-            unread -> Bool,
-            created_at -> Timestamp,
-            updated_at -> Timestamp,
-        }
-    }
-}
-use schema::notification_data;
+
+// diesel::table! {
+//     notification_data {
+//         id -> Integer,
+//         sender -> Text,
+//         title -> Nullable<Text>,
+//         body -> Nullable<Text>,
+//         created_at -> Timestamp,
+//         updated_at -> Timestamp,
+//         unread -> Bool,
+//     }
+// }
+
+pub use self::diesel::query_builder::QueryBuilder;
+use crate::schema::notification_data::{self};
 //endregion
-use crate::schema::notification_data::unread;
+// use crate::schema::notification_data::unread;
 
 //region --| Database Models ---------------
 #[derive(Deserialize, Insertable)]
@@ -74,7 +77,7 @@ pub struct NotificationMsg {
 //endregion
 
 lazy_static! {
-    pub static ref SETTINGS: RwLock<Config> = RwLock::new(Config::default());
+    pub static ref SETTINGS: RwLock<config::Config> = RwLock::new(config::Config::default());
 }
 
 // --| Locate or create configuration directory ----------------
@@ -91,12 +94,12 @@ pub fn get_config_path(name: &str) -> PathBuf {
 
     let mut path = PathBuf::new();
     let mut home = env::var(key).expect("Failed to get home dir");
-    home.push_str(format!("/.config/{}", name.to_lowercase()).to_string().as_str());
+    home.push_str(format!("/.config/{}", name.to_lowercase()).as_str());
     path.push(home);
 
     fs::create_dir_all(path.clone()).expect("Failed to create config dir");
 
-    if Path::new(&path).exists() == true {
+    if Path::new(&path).exists() {
         let settings_path = match path.join("settings.toml").to_str() {
             Some(p) => PathBuf::from(p),
             None => std::path::PathBuf::from("settings"),
@@ -129,7 +132,7 @@ pub fn init_logging() -> PathBuf {
 
     CombinedLogger::init(vec![
         TermLogger::new(default_level, logging_config.clone(), TerminalMode::Mixed, ColorChoice::Auto),
-        WriteLogger::new(default_level, logging_config.clone(), File::create(log_path).unwrap()),
+        WriteLogger::new(default_level, logging_config, File::create(log_path).unwrap()),
     ])
     .unwrap();
 
@@ -141,7 +144,7 @@ pub fn init_logging() -> PathBuf {
 // --|----------------------------------------------------------
 pub fn establish_connection() -> SqliteConnection {
     let settings = SETTINGS.read().unwrap();
-    let database_url = settings.get_str("database.DATABASE_URL").unwrap();
+    let database_url = settings.get_str("database.databaseUrl").unwrap();
     debug!("{:?}", database_url);
 
     SqliteConnection::establish(&database_url).unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
@@ -170,23 +173,43 @@ pub fn insert_notification(conn: &mut SqliteConnection, sender: &str, title: Opt
 
 // Get notifications from database
 pub fn get_notifications() -> String {
+    use crate::notification_data::dsl::*;
+
     let conn = establish_connection();
-    let results = notification_data::table
-        .filter(unread.eq(true))
-        .load::<Notification>(&conn)
-        .expect("Error loading notifications");
+    let results = notification_data.filter(unread.eq(true)).load::<Notification>(&conn).expect("Error loading notifications");
 
     debug!("Displaying {} posts", &results.len());
-    for sender in &results {
-        debug!("{}", sender.sender);
+    for s in &results {
+        debug!("{}", s.sender);
         debug!("----------\n");
-        debug!("{:?}", sender.body);
+        debug!("{:?}", s.body);
     }
 
-    let json_string = serde_json::to_string(&results).unwrap_or_else(|err| {
+    serde_json::to_string(&results).unwrap_or_else(|err| {
         debug!("Error serializing to json: {}", err);
         String::from("Not_found")
-    });
+    })
+}
 
-    return json_string;
+
+// Mark list of notifications status field as read
+pub fn mark_notifications_as_read(ids: Vec<i32>) -> String {
+    use crate::notification_data::dsl::*;
+
+    let conn = establish_connection();
+
+    let result = diesel::update(notification_data.filter(id.eq_any(ids)))
+        .set(unread.eq(false))
+        .execute(&conn);
+
+    return match result {
+        Ok(_) => {
+            debug!("Marked notifications as read");
+            String::from("Success")
+        }
+        Err(err) => {
+            error!("Error marking notifications as read: {}", err);
+            String::from("Error")
+        }
+    };
 }

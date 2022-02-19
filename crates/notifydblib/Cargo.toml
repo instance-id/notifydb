@@ -13,7 +13,7 @@ serde        = {version = "1.0", features = ["derive", ]}
 serde_derive = "1.0"
 serde_json   = "1.0"
 diesel       = { version = "1.4.0",features = ["sqlite", "chrono"]}
-config       = {version = "0.11", features = ["toml"]}
+config       = {version = "0.11", features = ["toml", "json"]}
 toml         = "0.5.8"
 lazy_static  = "1.4.0"
 log          = "0.4"

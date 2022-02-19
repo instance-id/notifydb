@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:libadwaita/libadwaita.dart';
 import 'package:nativeshell/accelerators.dart';
 import 'package:nativeshell/nativeshell.dart';
 
@@ -81,9 +80,9 @@ class _MenuPageState extends State<MenuPage> {
       ++_counter;
       menu.update();
     });
-    AdwHeaderBar.minimalNativeshell(
-      window: await Window.of(context).showPopupMenu(menu, e.globalPosition),
-    );
+    // AdwHeaderBar.minimalNativeshell(
+    //   window: await Window.of(context).showPopupMenu(menu, e.globalPosition),
+    // );
 
     timer.cancel();
   }

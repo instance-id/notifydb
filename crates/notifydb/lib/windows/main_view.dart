@@ -23,7 +23,7 @@ class _MainViewState extends State<MainView> {
 
   @override
   void initState() {
-    getIt.isReady<AppServices>().then((_) =>  getIt<AppServices>().addListener(update));
+    getIt.isReady<AppServices>().then((_) => getIt<AppServices>().addListener(update));
 
     super.initState();
   }
@@ -36,129 +36,152 @@ class _MainViewState extends State<MainView> {
 
   void update() => setState(() => {});
 
-  Future<void> windowAction(String action) async {
+  Future<void> windowAction(String action, LocalWindow window) async {
     switch (action) {
       case 'hide':
-        Logger.write('Minimizing');
-        await Window.of(context).setMinimized(true);
+        await window.setMinimized(true);
+        Logger.debug('Minimizing');
         break;
       case 'restore':
-        Logger.write('Restore');
-        await Window.of(context).activate();
+        await window.setMinimized(false);
+        Logger.debug('Restoring');
         break;
       case 'quit':
-        Logger.write('Quit');
-        await Window.of(context).close();
+        await window.close();
+        Logger.debug('Quit');
         break;
       default:
     }
   }
 
+  DecoratedCloseButton closeHandler({void Function()? onTap}) {
+    return DecoratedCloseButton(
+      width: 25,
+      height: 25,
+      type: _currentThemeType,
+      onPressed: () => onTap?.call(),
+    );
+  }
+
+  DecoratedMinimizeButton minimizeHandler({void Function()? onTap}) {
+    return DecoratedMinimizeButton(
+      width: 25,
+      height: 25,
+      type: _currentThemeType,
+      onPressed: () => onTap?.call(),
+    );
+  }
+
+  DecoratedMaximizeButton maximizeHandler({void Function()? onTap}) {
+    return DecoratedMaximizeButton(
+      width: 25,
+      height: 25,
+      type: _currentThemeType,
+      onPressed: () => onTap?.call(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final mainApp = Get.put(MainController());
+    var window = Window.of(context);
 
     return Expanded(
-        child: Column(mainAxisSize: MainAxisSize.max, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      // --| Header Bar ----------------------------------------
-      // --|----------------------------------------------------
-      AdwHeaderBar.minimalNativeshell(height: 35, padding: EdgeInsets.only(left: 0, right: 0), titlebarSpace: 10, window: Window.of(context), start: [
-        Builder(builder: (context) {
-          return AdwHeaderButton(
-              icon: const Icon(Icons.view_sidebar, size: 15),
-              // isActive: _flapController.isOpen,
-              onPressed: () {
-                // _flapController.toggle();
-              });
-        })
-      ],
+        child: Column(
+      mainAxisSize: MainAxisSize.max,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // --| Header Bar ----------------------------------------
+        // --|----------------------------------------------------
+        AdwHeaderBar.customNativeshell(
+          height: 35,
+          padding: EdgeInsets.only(left: 0, right: 0),
+          titlebarSpace: 10,
+          window: window,
+          closeBtn: (void Function()? onTap) => closeHandler(onTap: onTap),
+          minimizeBtn: (void Function()? onTap) => minimizeHandler(onTap: onTap),
+          maximizeBtn: (void Function()? onTap) => maximizeHandler(onTap: onTap),
+          start: [
+            Builder(builder: (context) {
+              return AdwHeaderButton(
+                  icon: const Icon(Icons.view_sidebar, size: 15),
+                  // isActive: _flapController.isOpen,
+                  onPressed: () {
+                    // _flapController.toggle();
+                  });
+            })
+          ],
 
           // --| Window Controls ---------------------
           // --|--------------------------------------
           end: [
-            DecoratedMinimizeButton(
-              width: 25,
-              height: 25,
-              type: _currentThemeType,
-              onPressed: () => windowAction('hide'),
-            ),
-            DecoratedMaximizeButton(
-              width: 25,
-              height: 25,
-              type: _currentThemeType,
-              onPressed: () => windowAction('restore'),
-            ),
-            DecoratedCloseButton(
-              width: 25,
-              height: 25,
-              type: _currentThemeType,
-              onPressed: () => windowAction('quit'),
-            )
-          ]),
+          //   DecoratedMinimizeButton(
+          //     width: 25,
+          //     height: 25,
+          //     type: _currentThemeType,
+          //     onPressed: () => Future.microtask(() => window.setMinimized(true)),
+          //   ),
+          //   DecoratedMaximizeButton(
+          //     width: 25,
+          //     height: 25,
+          //     type: _currentThemeType,
+          //     onPressed: () => window.setMinimized(true),
+          //         // Future.microtask(() => window.setMinimized(false)),
+          //   ),
+          //   DecoratedCloseButton(
+          //     width: 25,
+          //     height: 25,
+          //     type: _currentThemeType,
+          //     onPressed: () => windowAction('quit', window),
+          //   )
+          ]
+        ),
 
-      // --| Main Application View -----------------------------
-      // --|----------------------------------------------------
-      FutureBuilder(
-          future: getIt.allReady(),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              return Expanded(
-                flex: 1,
-                child: Container(
-                    child: Row(mainAxisSize: MainAxisSize.max, children: [
-                  // --| Left Side Column ----------
-                  // --|----------------------------
-                  Container(
-                    child: Obx(
-                      () => NavigationSideBar(selectedIndex: mainApp.menuIndex.toInt(), onIndexSelect: mainApp.menuIndex),
+        // --| Main Application View -----------------------------
+        // --|----------------------------------------------------
+        FutureBuilder(
+            future: getIt.allReady(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return Expanded(
+                  flex: 1,
+                  child: Container(
+                      child: Row(mainAxisSize: MainAxisSize.max, children: [
+                    // --| Left Side Column ----------
+                    // --|----------------------------
+                    Container(
+                      child: Obx(
+                        () => NavigationSideBar(
+                            selectedIndex: mainApp.menuIndex.toInt(), onIndexSelect: mainApp.menuIndex),
+                      ),
                     ),
+
+                    // --| Right Side Column ---------
+                    // --|----------------------------
+                    Expanded(flex: 80, child: Home()),
+                  ])),
+                );
+              } else {
+                // --| Loading View --------------------
+                // --|----------------------------------
+                return Container(
+                  height: mainApp.appInitialSize.height,
+                  width: mainApp.appInitialSize.width,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      Text('Waiting for initialisation'),
+                      SizedBox(
+                        height: 15,
+                      ),
+                      CircularProgressIndicator(),
+                    ],
                   ),
-                  // Expanded(flex: 15, child: CategoryView()),
-
-                  // --| Right Side Column ---------
-                  // --|----------------------------
-                  Expanded(flex: 80, child: Home()),
-                ])),
-              );
-            } else {
-              // --| Loading View --------------------
-              // --|----------------------------------
-              return Container(
-                height: 450,
-                width: 900,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    Text('Waiting for initialisation'),
-                    SizedBox(
-                      height: 15,
-                    ),
-                    CircularProgressIndicator(),
-                  ],
-                ),
-              );
-            }
-          })
-    ]));
+                );
+              }
+            })
+      ],
+    ));
   }
 }
-
-// Expanded(child: NotificationData()),
-//     Column(children: [
-//   Text(
-//     getIt<AppModel>().counter.toString(),
-//     style: Theme.of(context).textTheme.headline4,
-//   ),
-//   AdwButton(
-//     onPressed: getIt<AppModel>().incrementCounter,
-//     child: Icon(Icons.add),
-//   ),
-//   AdwPreferencesGroup(
-//       children: List.generate(
-//           3,
-//           (index) => ListTile(
-//                 dense: true,
-//                 title: Text('Index $index'),
-//               )))
-// ])

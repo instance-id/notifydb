@@ -5,6 +5,7 @@ use nativeshell::{
 };
 use platform_channels::PlatformChannels;
 use database_channels::DatabaseChannels;
+use settings_channels::SettingsChannels;
 use window_channels::WindowChannels;
 
 #[cfg(target_os = "macos")]
@@ -15,6 +16,7 @@ mod file_open_dialog;
 mod platform_channels;
 mod database_channels;
 mod window_channels;
+mod settings_channels;
 
 nativeshell::include_flutter_plugins!();
 
@@ -23,7 +25,6 @@ fn main() -> () {
     register_observatory_listener("notifydb".into());
 
     notifydblib::init_logging();
-    // env_logger::builder().format_timestamp(None).init();
 
     let context = Context::new(ContextOptions {
         app_namespace: "notifydb".into(),
@@ -37,6 +38,7 @@ fn main() -> () {
     let _platform_channels = PlatformChannels::new(context.weak()).register();
     let _database_channels = DatabaseChannels::new(context.weak()).register();
     let _window_channels = WindowChannels::new(context.weak()).register();
+    let _settings_channels = SettingsChannels::new(context.weak()).register();
 
     context.window_manager.borrow_mut().create_window(Value::Null, None).unwrap();
 

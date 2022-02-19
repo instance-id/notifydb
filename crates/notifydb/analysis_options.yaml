@@ -1,3 +1,5 @@
 include: package:pedantic/analysis_options.yaml
 analyzer:
-  exclude: [target/**]
+  exclude: [ target/**, "**/*.g.dart", "**/*.freezed.dart" ]
+  errors:
+    invalid_annotation_target: ignore

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// ignore: unused_import
 import 'package:nativeshell/nativeshell.dart';
 import 'package:notifydb/widgets/button.dart';
 import 'package:path_provider/path_provider.dart';

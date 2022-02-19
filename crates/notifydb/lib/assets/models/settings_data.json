@@ -1,0 +1,20 @@
+{
+  "database": {
+    "databaseUrl": "file:/home/mosthated/.config/notifydb/test.db"
+  },
+  "viewer": {
+    "activatedBorderColor": "#000000",
+    "activatedColor": "#000000",
+    "borderColor": "#000000",
+    "cellColorInEditState": "#000000",
+    "cellColorInReadOnlyState": "#000000",
+    "cellTextStyle": "#D7D3CE",
+    "checkedColor": "#000000",
+    "footerBackgroundColor": "#313131",
+    "gridBackgroundColor": "#242424",
+    "gridBorderColor": "#000000",
+    "headerBackgroundColor": "#282828",
+    "inactivatedBorderColor": "#000000",
+    "tableOuterBackgroundColor": "#CCCCCC"
+  }
+}

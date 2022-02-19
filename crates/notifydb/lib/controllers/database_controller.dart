@@ -12,6 +12,12 @@ class DatabaseController extends GetxController {
     Logger.write(result);
   }
 
+  Future<String> markSelected(List<int> selected) async {
+    final result = await _channel.invokeMethod('markSelected', selected);
+    Logger.write(result);
+    return result;
+  }
+
   void dispatchIntent(Intent intent) {
     final primaryContext = primaryFocus?.context;
     if (primaryContext != null) {

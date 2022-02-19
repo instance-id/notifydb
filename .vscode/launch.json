@@ -1,0 +1,56 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "notifydb",
+            "cwd": "crates/notifydb",
+            "request": "launch",
+            "type": "dart",
+        },
+        {
+            "name": "notifydb (profile mode)",
+            "cwd": "crates/notifydb",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "Flutter: Attach to Process",
+            "type": "dart",
+            "request": "attach",
+            "osx": {
+                "serviceInfoFile": "${env:TMPDIR}vmservice.notifydb",
+            },
+            "windows": {
+                "serviceInfoFile": "${env:TEMP}/vmservice.notifydb"
+            },
+            "linux": {
+                "serviceInfoFile": "${env:XDG_RUNTIME_DIR}/vmservice.notifydb"
+            },
+            "dependsOn": [
+                "Run executable notifydb"
+            ]
+        },
+        {
+            "name": "Run executable notifydb",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "run",
+                    "--bin=notifydb",
+                    // "--package=notifydb"
+                ],
+                "filter": {
+                    "name": "notifydb",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}/crates/notifydb"
+        },
+    ]
+}

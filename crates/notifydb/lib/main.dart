@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:nativeshell/nativeshell.dart';
@@ -7,6 +6,9 @@ import 'package:notifydb/utils/logger.dart';
 import 'package:notifydb/windows/main_view.dart';
 import 'package:get/get.dart';
 
+import 'controllers/database_controller.dart';
+import 'controllers/table_controller.dart';
+import 'controllers/main_controller.dart';
 import 'services/app_services.dart';
 
 GetIt getIt = GetIt.instance;
@@ -16,14 +18,16 @@ void main() async {
   disableShaderWarmUp();
   getIt.registerSingleton<AppServices>(AppServicesImpl(), signalsReady: true);
 
-
-
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    Get.put(MainController());
+    Get.put(TableController());
+    Get.put(DatabaseController());
+
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       enableLog: true,
@@ -40,6 +44,7 @@ class MyApp extends StatelessWidget {
             onCreateState: (initData) {
               WindowState? state;
               state ??= MainWindowState();
+              state.window.getGeometry();
               return state;
             },
           ),
@@ -50,7 +55,6 @@ class MyApp extends StatelessWidget {
 }
 
 class MainWindowState extends WindowState {
-  // late Geometry geometry;
 
   @override
   Future<void> initializeWindow(Size intrinsicContentSize) async {
