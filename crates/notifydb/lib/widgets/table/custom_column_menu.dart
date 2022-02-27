@@ -44,7 +44,6 @@ Future<String?>? showFilterColumnMenu({
   final overlay = Overlay.of(context!)!.context.findRenderObject() as RenderBox;
   final textColor = stateManager!.configuration!.cellTextStyle.color;
   final backgroundColor = stateManager.configuration!.menuBackgroundColor;
-  final localeText = stateManager.localeText;
 
   var menuItems = <PopupMenuItem<String>>[];
 

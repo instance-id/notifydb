@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import '../utils/logger.dart';
 
 class Notification {
-  final String id;
+  final int id;
   final String? appname;
   final String? replaces_id;
   final String? summary;
@@ -40,7 +40,7 @@ class Notification {
       this.created_at});
 
   Notification.fromJson(Map<String, dynamic> parsedJson)
-      : id = parsedJson['id'].toString(),
+      : id = parsedJson['id'] as int,
         appname = parsedJson['sender'],
         replaces_id = parsedJson['replaces_id'],
         summary = parsedJson['title'],

@@ -1,8 +1,13 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:libadwaita/libadwaita.dart';
 import 'package:pluto_grid/pluto_grid.dart';
+
+import '../../controllers/data_controller.dart';
+import '../../model/settings_data.dart';
+import '../../utils/ColorUtil.dart';
 
 class CustomPagination extends PlutoStatefulWidget {
   const CustomPagination(this.stateManager, {Key? key}) : super(key: key);
@@ -44,12 +49,11 @@ abstract class _CustomPaginationStateWithChange extends PlutoStateWithChange<Cus
 }
 
 class _PlutoPaginationState extends _CustomPaginationStateWithChange {
+  final Viewer settings = Get.find<DataController>().settings_data.viewer;
+  late Color footerBackgroundColor = GetColor.parse(settings.footerBackgroundColor!);
   late double _maxWidth;
 
-  final _iconSplashRadius = PlutoGridSettings.rowHeight * 0.3;
-
   bool get _isFirstPage => page < 2;
-
   bool get _isLastPage => page > totalPage - 1;
 
   int get _itemSize {
@@ -135,25 +139,38 @@ class _PlutoPaginationState extends _CustomPaginationStateWithChange {
     var isCurrentIndex = page == pageFromIndex;
 
     return AdwButton.flat(
+      padding: EdgeInsets.fromLTRB(15, 4, 15, 4),
+      constraints: BoxConstraints(
+        maxHeight: 30,
+        minWidth: 55,
+        maxWidth: 55,
+      ),
       onPressed: () {
         widget.stateManager.setPage(pageFromIndex);
       },
       margin: EdgeInsets.symmetric(vertical: 0),
       child: Text(
         pageFromIndex.toString(),
+        textAlign: TextAlign.center,
         style: _getNumberTextStyle(isCurrentIndex),
       ),
     );
   }
 
+  Color colorCheck(bool check) {
+    return check ? widget.stateManager.configuration!.disabledIconColor : widget.stateManager.configuration!.iconColor;
+  }
+
+  Color backgroundCheck(bool check) {
+    return check ? footerBackgroundColor  : widget.stateManager.configuration!.disabledIconColor;
+  }
+
   @override
   Widget build(BuildContext context) {
+
     return LayoutBuilder(
       builder: (layoutContext, size) {
         _maxWidth = size.maxWidth;
-
-        final _iconColor = widget.stateManager.configuration!.iconColor;
-        final _disabledIconColor = widget.stateManager.configuration!.disabledIconColor;
 
         return Center(
           child: SingleChildScrollView(
@@ -163,38 +180,38 @@ class _PlutoPaginationState extends _CustomPaginationStateWithChange {
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
+                AdwButton.flat(
+                  backgroundColor: backgroundCheck(_isFirstPage),
+                  padding: EdgeInsets.fromLTRB(12, 3, 12, 3),
+                  constraints: BoxConstraints(maxHeight: 31, minWidth: 45, maxWidth: 45),
+                  margin: EdgeInsets.symmetric(vertical: 0),
                   onPressed: _isFirstPage ? null : _firstPage,
-                  icon: const Icon(Icons.first_page),
-                  color: Colors.pink.withOpacity(0.4), // _iconColor,
-                  disabledColor: _disabledIconColor,
-                  splashRadius: _iconSplashRadius,
-                  mouseCursor: _isFirstPage ? SystemMouseCursors.basic : SystemMouseCursors.click,
+                  child: Icon(Icons.first_page, size: 20, color: colorCheck(_isFirstPage)),
                 ),
-                IconButton(
+                AdwButton.flat(
+                  backgroundColor: backgroundCheck(_isFirstPage),
+                  padding: EdgeInsets.fromLTRB(12, 3, 12, 3),
+                  constraints: BoxConstraints(maxHeight: 31, minWidth: 45, maxWidth: 45),
+                  margin: EdgeInsets.symmetric(vertical: 0),
                   onPressed: _isFirstPage ? null : _beforePage,
-                  icon: const Icon(Icons.navigate_before),
-                  color: Colors.pink.withOpacity(0.4),
-                  disabledColor: _disabledIconColor,
-                  splashRadius: _iconSplashRadius,
-                  mouseCursor: _isFirstPage ? SystemMouseCursors.basic : SystemMouseCursors.click,
+                  child: Icon(Icons.navigate_before, size: 20, color: colorCheck(_isFirstPage)),
                 ),
                 ..._pageNumbers.map(_makeNumberButton).toList(),
-                IconButton(
+                AdwButton.flat(
+                  backgroundColor: backgroundCheck(_isLastPage),
+                  padding: EdgeInsets.fromLTRB(12, 3, 12, 3),
+                  constraints: BoxConstraints(maxHeight: 31, minWidth: 45, maxWidth: 45),
+                  margin: EdgeInsets.symmetric(vertical: 0),
                   onPressed: _isLastPage ? null : _nextPage,
-                  icon: const Icon(Icons.navigate_next),
-                  color: Colors.pink.withOpacity(0.4),
-                  disabledColor: _disabledIconColor,
-                  splashRadius: _iconSplashRadius,
-                  mouseCursor: _isLastPage ? SystemMouseCursors.basic : SystemMouseCursors.click,
+                  child: Icon(Icons.navigate_next, size: 20, color: colorCheck(_isLastPage)),
                 ),
-                IconButton(
+                AdwButton.flat(
+                  backgroundColor: backgroundCheck(_isLastPage),
+                  padding: EdgeInsets.fromLTRB(12, 3, 12, 3),
+                  constraints: BoxConstraints(maxHeight: 31, minWidth: 45, maxWidth: 45),
+                  margin: EdgeInsets.symmetric(vertical: 0),
                   onPressed: _isLastPage ? null : _lastPage,
-                  icon: const Icon(Icons.last_page),
-                  color: Colors.pink.withOpacity(0.4),
-                  disabledColor: _disabledIconColor,
-                  splashRadius: _iconSplashRadius,
-                  mouseCursor: _isLastPage ? SystemMouseCursors.basic : SystemMouseCursors.click,
+                  child: Icon(Icons.last_page, size: 20, color: colorCheck(_isLastPage)),
                 ),
               ],
             ),

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+import '../controllers/main_controller.dart';
 
 class NavigationSideBar extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onIndexSelect;
+  final mainController = Get.find<MainController>();
 
-  const NavigationSideBar({
+  NavigationSideBar({
     Key? key,
     required this.selectedIndex,
     required this.onIndexSelect,
@@ -18,7 +22,6 @@ class NavigationSideBar extends StatelessWidget {
           selectedIndex: selectedIndex,
           onDestinationSelected: onIndexSelect,
           labelType: NavigationRailLabelType.selected,
-
           destinations: [
             NavigationRailDestination(
               icon: Icon(Icons.all_inbox),
@@ -36,12 +39,12 @@ class NavigationSideBar extends StatelessWidget {
           bottom: 0,
           left: 0,
           right: 0,
-          height: 60,
+          height: 52,
           child: Material(
             child: IconButton(
               iconSize: 25,
               icon: Icon(Icons.settings),
-              onPressed: () => {},
+              onPressed: () => mainController.flapController.toggle(),
             ),
           ),
         ),

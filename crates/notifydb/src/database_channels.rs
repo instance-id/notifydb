@@ -1,8 +1,11 @@
+use std::collections::HashMap;
+
+use log::debug;
+use nativeshell::codec::value::from_value;
 use nativeshell::{
     codec::{MethodCall, MethodCallReply, Value},
     shell::{Context, EngineHandle, MethodCallHandler, MethodChannel},
 };
-use nativeshell::codec::value::from_value;
 
 pub struct DatabaseChannels {
     context: Context,
@@ -21,20 +24,46 @@ impl DatabaseChannels {
 impl MethodCallHandler for DatabaseChannels {
     fn on_method_call(&mut self, call: MethodCall<Value>, reply: MethodCallReply<Value>, _engine: EngineHandle) {
         match call.method.as_str() {
-            "query_database" => {
-                println!("{:?}", call.args);
+            // --| Settings ---------------------
+            "get_settings" => {
+                let request: String = from_value(&call.args).unwrap();
+                let settings_data = notifydblib::get_settings(&request);
+                debug!("Settings data: {:?}", settings_data);
 
-                let notification_results = notifydblib::get_notifications();
-                reply.send_ok(nativeshell::codec::Value::String(notification_results));
+                reply.send_ok(nativeshell::codec::Value::String(settings_data));
+            }
+            "update_settings" => {
+                let request: HashMap<String, String> = from_value(&call.args).unwrap();
+                debug!("Settings update request: {:?}", &request);
+
+                let app_name =  request.get("app_name").unwrap().as_str();
+                let settings = request.get("settings").unwrap().as_str();
+
+                let result = notifydblib::upsert_settings(app_name, settings);
+                // println!("Settings update result: {:?}", request);
+
+                reply.send_ok(nativeshell::codec::Value::String(result));
             }
 
+            // --| Notifications ----------------
+            "get_notification_count" => {
+                let count_results = notifydblib::get_notification_count();
+                debug!("Count results: {:?}", count_results);
+
+                reply.send_ok(nativeshell::codec::Value::I64(count_results));
+            }
+            "query_database" => {
+                debug!("{:?}", call.args);
+                let notification_results = notifydblib::get_notifications();
+
+                reply.send_ok(nativeshell::codec::Value::String(notification_results));
+            }
             "markSelected" => {
                 let request: Vec<i32> = from_value(&call.args).unwrap();
 
                 let notification_results = notifydblib::mark_notifications_as_read(request);
                 reply.send_ok(nativeshell::codec::Value::String(notification_results));
             }
-
             _ => {}
         }
     }

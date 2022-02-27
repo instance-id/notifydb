@@ -1,6 +1,7 @@
-import '../main.dart';
-import '../model/settings_data.dart';
-import '../services/app_services.dart';
+import 'package:get/get.dart';
+
+import '../controllers/data_controller.dart';
+import '../controllers/logging_controller.dart';
 
 enum LogLevel {
   debug,
@@ -11,36 +12,45 @@ enum LogLevel {
 }
 
 mixin Logger {
-  static final Database settings = getIt.get<AppServices>().settings_data.database;
-  static final LogLevel logLevel =
-      LogLevel.values.firstWhere((LogLevel level) => level.toString().contains(settings.logLevel!.toLowerCase()) ?? false);
+  static LoggingController loggingController = Get.find<LoggingController>();
+
+  static int checkLogLevel() {
+    return LogLevel.values
+        .firstWhere(
+            (LogLevel level) => level.toString().contains(Get.find<DataController>().logLevel.toLowerCase() ?? 'error'))
+        .index;
+  }
 
   static void debug(String message) {
-    if (logLevel.index <= LogLevel.debug.index) {
-      Future.microtask(() => print('** [DEBUG] $message'));
+    if (checkLogLevel() <= LogLevel.debug.index) {
+      // Future.microtask(() => print('** [DEBUG] $message'));
+      Future.microtask(() => loggingController.log('** [DEBUG] $message'));
     }
   }
 
   static void info(String message) {
-    if (logLevel.index <= LogLevel.info.index) {
-      Future.microtask(() => print('** [INFO] $message'));
+    if (checkLogLevel() <= LogLevel.info.index) {
+      // Future.microtask(() => print('** [INFO] $message'));
+      Future.microtask(() => loggingController.log('** [INFO] $message'));
     }
   }
 
   static void error(String message) {
-    if (logLevel.index <= LogLevel.error.index) {
-      Future.microtask(() => print('** [ERROR] $message'));
+    if (checkLogLevel() <= LogLevel.error.index) {
+      // Future.microtask(() => print('** [ERROR] $message'));
+      Future.microtask(() => loggingController.log('** [ERROR] $message'));
     }
   }
 
   static void write(String text, {String level = 'INFO', bool isError = false}) {
-    if (!settings.debug! && !isError) return;
     var messageString;
     if (isError) {
       messageString = '** [ERROR] $text';
     } else {
       messageString = '** [$level] $text';
     }
+
     Future.microtask(() => print(messageString));
+    Future.microtask(() => loggingController.log(messageString));
   }
 }

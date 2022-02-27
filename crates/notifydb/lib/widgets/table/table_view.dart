@@ -1,19 +1,21 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:notifydb/widgets/table/custom_filter.dart';
+import 'package:html_unescape/html_unescape.dart';
 import 'package:pluto_grid/pluto_grid.dart';
 import 'package:sized_context/sized_context.dart';
 
+import '../../controllers/data_controller.dart';
+import '../../controllers/main_controller.dart';
 import '../../controllers/table_controller.dart';
-import '../../main.dart';
 import '../../model/settings_data.dart';
-import '../../services/app_services.dart';
 import '../../utils/ColorUtil.dart';
 import '../../utils/logger.dart';
-import 'custom_column_menu.dart';
-import 'custom_footer.dart';
+
 import 'message_details.dart';
+import 'custom_column_menu.dart';
+import 'custom_filter.dart';
+import 'custom_footer.dart';
 
 class TableView extends StatefulWidget {
   const TableView({Key? key}) : super(key: key);
@@ -25,22 +27,21 @@ class TableView extends StatefulWidget {
 class _TableViewState extends State<TableView> {
   // --| Service Locators ----------------------------
   // --|----------------------------------------------
-  var notifications = getIt.get<AppServices>().notification_list;
-  final Viewer settings = getIt.get<AppServices>().settings_data.viewer;
+
+  var notifications = Get.find<DataController>().notification_list;
+  final Viewer settings = Get.find<DataController>().settings_data.viewer;
   final tableController = Get.find<TableController>();
 
   // --| Variables -----------------------------------
   // --|----------------------------------------------
   late final PlutoGridStateManager stateManager;
+  late final MainController mainController;
   late PlutoGrid grid;
   final List<PlutoColumn> columns = [];
   final List<PlutoRow> rows = [];
   final List<String> uniqueSenders = [];
   final Map<String, int> senderCount = {};
   final Map<String, String> displayMap = {};
-
-  // late TapGestureRecognizer tap = TapGestureRecognizer();
-  // late final GestureTapCallback? onTap;
 
   late Color headerBackgroundColor;
   late Color gridBackgroundColor;
@@ -57,6 +58,7 @@ class _TableViewState extends State<TableView> {
   bool hasChanged = false;
   double priorOffset = 0;
   bool needsUpdate = false;
+  bool initialized = false;
   late RxDouble offset;
 
   // --| Column Definition --------------------------------
@@ -182,6 +184,8 @@ class _TableViewState extends State<TableView> {
     return stateManager.filterRows.isEmpty;
   }
 
+  String currentlyFiltered = '';
+
   void _showContextMenu(BuildContext context, Offset position) async {
     final selectedMenu = await showFilterColumnMenu(
       context: context,
@@ -192,11 +196,9 @@ class _TableViewState extends State<TableView> {
       displayMap: displayMap,
     );
 
-    Logger.debug('selectedMenu: $selectedMenu');
-    Logger.debug('checkFiltered: $checkFiltered()');
-
     switch (selectedMenu) {
       case 'clear':
+        currentlyFiltered = '';
         stateManager.setFilter(null, notify: false);
         stateManager.resetPage(notify: true);
         stateManager.setPage(1, notify: false);
@@ -218,8 +220,8 @@ class _TableViewState extends State<TableView> {
               ]
             : stateManager.filterRows;
 
-        Logger.debug('filter rows: ${filteredRows.length}');
         if (selectedMenu != null) {
+          currentlyFiltered = selectedMenu;
           stateManager.setFilterWithFilterRows(filteredRows, notify: true);
         }
         break;
@@ -232,11 +234,15 @@ class _TableViewState extends State<TableView> {
 
   // --| Populate rows -------------------------------------
   // --|----------------------------------------------------
-  List<PlutoRow> buildNotificationList() {
+  void buildNotificationList() {
+    Logger.debug('build notification list');
+
     rows.clear();
     uniqueSenders.clear();
     senderCount.clear();
     displayMap.clear();
+
+    notifications = Get.find<DataController>().notification_list;
 
     notifications.reversed.forEach((element) {
       var appName = element.appname!;
@@ -250,13 +256,15 @@ class _TableViewState extends State<TableView> {
         uniqueSenders.add('$appName');
       }
 
+      var unescape = HtmlUnescape();
+
       rows.add(PlutoRow(
-        sortIdx: int.tryParse(element.id),
+        sortIdx: element.id,
         cells: {
           'id': PlutoCell(value: element.id),
           'application': PlutoCell(value: element.appname),
-          'title': PlutoCell(value: element.summary),
-          'message': PlutoCell(value: element.body),
+          'title': PlutoCell(value: unescape.convert(element.summary!)),
+          'message': PlutoCell(value: unescape.convert(element.body!)),
           'sent_date': PlutoCell(value: element.Created_at),
           'status': PlutoCell(value: 'unread'),
         },
@@ -264,54 +272,85 @@ class _TableViewState extends State<TableView> {
     });
 
     senderCount.forEach((key, value) {
-      Logger.debug('$key: $value');
       displayMap[key] = '$key: ${value.toString()}';
     });
 
     uniqueSenders.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-    tableController.setShownCount(rows.length);
-    return rows;
+
+    Future.microtask(() {
+      tableController.setShownCount(rows.length);
+    });
+  }
+
+  PlutoGrid RebuildGrid() {
+    tableController.setNeedsRefresh(false);
+    if (initialized) {
+      buildNotificationList();
+
+      if (!uniqueSenders.contains(currentlyFiltered) || stateManager.refRows.filteredList.isEmpty) {
+        stateManager.setFilter(null, notify: false);
+        stateManager.resetPage(notify: true);
+        stateManager.setPage(1, notify: false);
+      }
+
+      stateManager.notifyListenersOnPostFrame();
+    }
+    return grid;
+  }
+
+  Color rowColorFunction(PlutoRowColorContext c) {
+    return (c.row.checked == true || c.stateManager.isSelectedRow(c.row.key) == true)
+        ? selectedRowColor
+        : Colors.transparent;
   }
 
   // --| Build Table Grid ---------------------------------
   // --|---------------------------------------------------
   PlutoGrid BuildGrid() {
-    var settings = getIt.get<AppServices>().settings_data.viewer;
+    Logger.debug('Building Table');
 
+    columns.clear();
     columns.addAll(buildColumns());
 
     columns.forEach((column) {
-      column.backgroundColor = headerBackgroundColor;
+      column.columnTitleBackgroundColor = headerBackgroundColor;
     });
 
-    grid = PlutoGrid(
+    var table = PlutoGrid(
       columns: columns,
       rows: rows,
       onLoaded: (PlutoGridOnLoadedEvent event) {
+        Logger.debug('onLoaded');
         stateManager = event.stateManager;
         tableController.stateManager = stateManager;
+        initialized = true;
 
         // --| Build Notification List --------------------
         buildNotificationList();
 
         setState(() {});
 
+        stateManager.setSelectingMode(PlutoGridSelectingMode.row);
+
+        // --| Hack to fix the rows not sorting when using pagination
         stateManager.setPage(2, notify: false);
         hasChanged = true;
         stateManager.setPage(1, notify: false);
+        // --|-------------------------------------------------------
+
         stateManager.notifyListenersOnPostFrame();
         stateManager.addListener(() => columnSizer());
       },
       onChanged: (PlutoGridOnChangedEvent event) {
+        Logger.debug('onChanged');
         hasChanged = true;
       },
       configuration: PlutoGridConfiguration.dark(
-          enableColumnFlex: true,
           gridBackgroundColor: gridBackgroundColor,
           gridBorderColor: gridBorderColor,
           enableColumnBorder: true,
           cellTextStyle: TextStyle(color: cellTextStyle, fontSize: 12),
-          rowHeight: 25,
+          rowHeight: 30,
           columnHeight: 30,
           footerCustomHeight: 35,
           scrollbarConfig: PlutoGridScrollbarConfig(
@@ -324,9 +363,11 @@ class _TableViewState extends State<TableView> {
           ])),
       mode: PlutoGridMode.selectWithOneTap,
       onSelected: (PlutoGridOnSelectedEvent event) {
+        Logger.debug('onSelected');
         if (event.row != null) {
           // --| Open message details view -----------------
           openDetail(event.row, context, stateManager);
+          stateManager.clearCurrentCell();
           hasChanged = true;
         }
       },
@@ -336,52 +377,37 @@ class _TableViewState extends State<TableView> {
         Logger.debug('${event.row?.cells['status']?.value} Checked: ${event.isChecked}');
 
         if (stateManager.checkedRows.isNotEmpty) {
+          stateManager.setSelecting(true);
           tableController.setSelected(stateManager.checkedRows.length);
         }
 
         tableController.selectedRows = stateManager.checkedRows;
 
-        if (event.isChecked!) {
-          stateManager.toggleSelectingRow(rows.indexOf(event.row!));
-          Logger.debug('Selected: ${stateManager.currentSelectingRows.length}');
-        }
-
         if (stateManager.checkedRows.isEmpty) {
           tableController.setSelected(0);
           stateManager.setSelecting(false);
         }
+        stateManager.notifyListeners();
       },
       onRowsMoved: (PlutoGridOnRowsMovedEvent event) => {hasChanged = true},
       rowColorCallback: (c) {
-        return c.row.checked == true ? selectedRowColor : Colors.transparent;
+        return rowColorFunction(c);
       },
       createFooter: (stateManager) {
+        Logger.debug('createFooter');
         stateManager.setPageSize(100, notify: false);
         return Container(
-          padding: EdgeInsets.all(0),
-          margin: EdgeInsets.all(0),
-          color: footerBackgroundColor,
-          child: Expanded(
-            child: CustomPagination(stateManager),
-          )
-        );
+            padding: EdgeInsets.all(0),
+            margin: EdgeInsets.all(0),
+            color: footerBackgroundColor,
+            child: Expanded(
+              child: CustomPagination(stateManager),
+            ));
       },
     );
 
     hasChanged = true;
-    return grid;
-  }
-
-  void resizeColumn() {
-    if (colWidth.toDouble() != lastWidth || hasChanged) {
-      if (lastWidth != 0) {
-        columns[3].width = stateManager.rightFrozenLeftOffset - stateManager.bodyColumnsWidthAtColumnIdx(2);
-        stateManager.notifyListeners();
-      }
-
-      lastWidth = colWidth.toDouble();
-      hasChanged = false;
-    }
+    return table;
   }
 
   @override
@@ -391,7 +417,9 @@ class _TableViewState extends State<TableView> {
 
     if (colWidth.toDouble() != lastWidth) {
       lastWidth = colWidth.toDouble();
-      stateManager.notifyListenersOnPostFrame();
+      if (hasChanged) {
+        stateManager.notifyListenersOnPostFrame();
+      }
     }
 
     return Scaffold(
@@ -399,7 +427,12 @@ class _TableViewState extends State<TableView> {
       body: Container(
         color: tableOuterBackgroundColor,
         padding: const EdgeInsets.all(15),
-        child: grid,
+        //@formatter:off
+        child: Obx(() => grid = tableController.rebuildTable
+            ? RebuildGrid()
+            : grid
+        ),
+        //@formatter:on
       ),
     );
   }

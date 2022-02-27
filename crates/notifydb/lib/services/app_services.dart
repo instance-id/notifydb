@@ -7,14 +7,13 @@ import 'package:nativeshell/nativeshell.dart';
 import '../model/settings_data.dart';
 import '../models/notification_model.dart' as notifi;
 import '../main.dart';
-import '../utils/logger.dart';
 
 abstract class AppServices extends ChangeNotifier {
   void getNotifications();
-
   List<notifi.Notification> get notification_list;
   Geometry get size;
   SettingsData get settings_data;
+  void setNotificationList(List<notifi.Notification> value);
 }
 
 class AppServicesImpl extends AppServices {
@@ -43,7 +42,12 @@ class AppServicesImpl extends AppServices {
       notifyListeners();
       getIt.signalReady(this);
     });
-    // notifyData.then((notificationList) => _notification_list = notificationList).then((_) => getIt.signalReady(this));
+  }
+
+  @override
+  void setNotificationList(List<notifi.Notification> value) {
+    _notification_list = value;
+    notifyListeners();
   }
 
   // --| Get App Settings --------------------------------------
@@ -80,6 +84,7 @@ class AppServicesImpl extends AppServices {
 
   @override
   List<notifi.Notification> get notification_list => _notification_list;
+
 
   @override
   List<notifi.Notification> getNotifications() {

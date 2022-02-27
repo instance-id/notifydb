@@ -29,7 +29,6 @@ class SettingsData with _$SettingsData {
 @freezed
 class Database with _$Database {
   const factory Database({
-    required String databaseUrl,
     @Default('warning') String? logLevel,
     @Default(false) bool? debug,
   }) = _Database;

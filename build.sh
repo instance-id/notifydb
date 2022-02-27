@@ -1,17 +1,21 @@
 #!/bin/bash
 
+BASEPATH=$(dirname "$0")
+
 ARG=$1
 ARG2=$@
 SUB="log"
+RUN="run"
 
-DB="test.db"
+DB="notify.db"
 ENVFILE=".env"
 SETTINGS="settings.toml"
 LISTENER="notifydb_listener"
 
-LISTENERSRC="$HOME/_dev/languages/rust/notifydb/target/debug/$LISTENER"
-LISTENERDEST="$HOME/.files/notifydb"
+LISTENERSRC="$BASEPATH/target/debug/$LISTENER"
+LISTENERDEST="$HOME/.config/notifydb"
 
+# diesel migration run
 
 function notifykill(){
     ps aux | grep -v grep | grep -v build | grep "$LISTENER" | awk '{print $2}' | xargs kill -9
@@ -54,4 +58,10 @@ if [ ! -f "$LISTENERDEST/$SETTINGS" ]; then
 fi
 
 echo "Build complete!"
-RUST_LOG="debug" "$LISTENERDEST/$LISTENER" &! # Start listener
+
+# shellcheck disable=SC1072,SC1073,SC1009,SC1035
+if [[ "$ARG2" == *"$RUN"* ]]; then
+    "$LISTENERDEST/$LISTENER" &!
+fi
+
+# RUST_LOG="debug" "$LISTENERDEST/$LISTENER" &! # Start listener

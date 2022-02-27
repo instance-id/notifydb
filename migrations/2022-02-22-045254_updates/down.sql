@@ -1,0 +1,2 @@
+DROP TABLE notification_data
+DROP TABLE settings_data

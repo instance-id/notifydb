@@ -5,7 +5,23 @@ diesel::table! {
         title -> Nullable<Text>,
         body -> Nullable<Text>,
         unread -> Bool,
+        archived -> Bool,
         created_at -> Timestamp,
         updated_at -> Timestamp,
     }
 }
+
+diesel::table! {
+    settings_data (id) {
+        id -> Integer,
+        application -> Text,
+        settings_json -> Text,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(
+    notification_data,
+    settings_data,
+);

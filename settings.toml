@@ -1,2 +1,21 @@
 [database]
-DATABASE_URL = "file:/home/mosthated/.files/notifydb/test.db"
+logLevel = "debug"
+debug = true
+databaseUrl = "file:/home/mosthated/.config/notifydb/notify.db"
+
+[viewer]
+# --| Table Colors ----------
+activatedBorderColor = "#000000"
+activatedColor = "#000000"
+borderColor = "#000000"
+cellColorInEditState = "#000000"
+cellColorInReadOnlyState = "#000000"
+cellTextStyle = "#D7D3CE"
+checkedColor = "#000000"
+footerBackgroundColor = "#282828" 
+gridBackgroundColor = "#303030"
+gridBorderColor = "#363636"
+headerBackgroundColor = "#282828"
+inactivatedBorderColor = "#000000"
+selectedRowColor = "#003eb341"
+tableOuterBackgroundColor = "#212121"

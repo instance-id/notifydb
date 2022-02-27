@@ -27,8 +27,6 @@ impl MethodCallHandler for SettingsChannels {
         match call.method.as_str() {
             "get_app_settings" => {
                 debug!("{:?}", call.args);
-                // let config = SETTINGS.read().unwrap().clone();
-                // let s: String = config.try_into().unwrap();
                 reply.send_ok(nativeshell::codec::Value::String(
                     SETTINGS.read().unwrap().clone().try_into::<serde_json::Value>().unwrap().to_string(),
                 ));
