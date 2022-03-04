@@ -52,6 +52,7 @@ dependencies:
   code_text_field: ^1.0.2
   html_unescape: ^2.0.0
   flutter_highlight: ^0.7.0
+  flutter_hooks: ^0.18.2+1
   pluto_grid: #^2.9.2
     git:
       url: git://github.com/instance-id/pluto_grid.git

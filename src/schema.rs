@@ -4,10 +4,14 @@ table! {
         sender -> Text,
         title -> Text,
         body -> Text,
+        actions -> Nullable<Text>,
+        hints -> Nullable<Text>,
+        icon -> Nullable<Text>,
+        timeout -> Nullable<Integer>,
         created_at -> Timestamp,
         updated_at -> Timestamp,
-        unread -> Bool,
         archived -> Bool,
+        unread -> Bool,
     }
 }
 

@@ -23,21 +23,18 @@ mixin Logger {
 
   static void debug(String message) {
     if (checkLogLevel() <= LogLevel.debug.index) {
-      // Future.microtask(() => print('** [DEBUG] $message'));
       Future.microtask(() => loggingController.log('** [DEBUG] $message'));
     }
   }
 
   static void info(String message) {
     if (checkLogLevel() <= LogLevel.info.index) {
-      // Future.microtask(() => print('** [INFO] $message'));
       Future.microtask(() => loggingController.log('** [INFO] $message'));
     }
   }
 
   static void error(String message) {
     if (checkLogLevel() <= LogLevel.error.index) {
-      // Future.microtask(() => print('** [ERROR] $message'));
       Future.microtask(() => loggingController.log('** [ERROR] $message'));
     }
   }
@@ -50,7 +47,17 @@ mixin Logger {
       messageString = '** [$level] $text';
     }
 
-    Future.microtask(() => print(messageString));
     Future.microtask(() => loggingController.log(messageString));
+  }
+
+  static void print(String text, {String level = 'INFO', bool isError = false}) {
+    var messageString;
+    if (isError) {
+      messageString = '** [ERROR] $text';
+    } else {
+      messageString = '** [$level] $text';
+    }
+
+    Future.microtask(() => print(messageString));
   }
 }

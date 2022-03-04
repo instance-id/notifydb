@@ -1,7 +1,11 @@
 extern crate dbus;
 
+use std::path::PathBuf;
 // --| datetime ------------------
 use chrono::{DateTime, Local};
+
+#[cfg(feature = "tray_icon")]
+use {cmd_lib::*, gtk, gtk::glib, tray_item::TrayItem};
 
 use dbus::arg::{self, RefArg};
 use dbus::blocking::Connection;
@@ -10,7 +14,7 @@ use dbus::message::{MatchRule, MessageType};
 use lazy_static::lazy_static;
 use log::debug;
 use log::*;
-use notifydblib::{establish_connection, init_logging, insert_notification, NotificationMsg};
+use notifydblib::{establish_connection, insert_notification, NotificationMsg};
 use std::process;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -39,8 +43,49 @@ lazy_static! {
     };
 }
 
+fn open_gui(gui_path:PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    run_cmd!(/bin/bash -c "nohup $gui_path &")?;
+    Ok(())
+}
+
+fn get_path() -> Result<(), Box<dyn std::error::Error>> {
+    // let path = std::env::current_exe()?;
+    // let path = path.parent().unwrap();
+    // let path = path.join("notifydb");
+    let mut gui_path = std::path::PathBuf::new();
+    gui_path.push("/home/mosthated/_dev/languages/rust/notifydb/target/debug/notifydb");
+    println!("{}", gui_path.display());
+    open_gui(gui_path)?;
+    Ok(())
+}
+
 fn main() -> () {
-    init_logging();
+    let config_path = notifydblib::get_config_path("notifydb");
+    notifydblib::init_logging(config_path);
+    notifydblib::setup();
+
+    // -- Tray item setup -----------------------
+    #[cfg(feature = "tray_icon")]
+    {
+        gtk::init().unwrap();
+        let mut gui_path = std::path::PathBuf::new();
+        gui_path.push("/home/mosthated/_dev/languages/rust/notifydb/target/debug/notifydb");
+        let mut tray = TrayItem::new("notifydb", "accessories-calculator").unwrap();
+        tray.add_label("Interface").unwrap();
+
+        tray.add_menu_item("Open Window", move || {
+            std::thread::spawn(move || {
+                get_path().unwrap();
+            });
+        })
+            .unwrap();
+
+        tray.add_menu_item("Quit", || {
+            gtk::main_quit();
+        })
+            .unwrap();
+    }
+    // -- Tray item setup -----------------------
 
     let conn = Connection::new_session().unwrap_or_else(|_| {
         error!("Couldn't connect tofailed to connect to session bus");
@@ -51,7 +96,7 @@ fn main() -> () {
     mr.msg_type = Some(MessageType::MethodCall);
 
     let proxy = conn.with_proxy("org.freedesktop.DBus", "/org/freedesktop/DBus", Duration::from_millis(5000));
-    let _: () = proxy.method_call("org.freedesktop.DBus", "AddMatch", (mr.match_str(),)).unwrap_or_else(|_| {
+    let _: () = proxy.method_call("org.freedesktop.DBus", "AddMatch", (mr.match_str(), )).unwrap_or_else(|_| {
         error!("failed on method call 'AddMatch'");
         process::exit(1);
     });
@@ -62,7 +107,6 @@ fn main() -> () {
         process::exit(1);
     });
 
-    info!("notifydb: start listening");
 
     conn.start_receive(
         mr,
@@ -95,27 +139,42 @@ fn main() -> () {
 
             let noticheck = format!("{}{}", notification.appname.to_string(), notification.summary.to_string());
             let pmcheck = format!("{}{}", pm.appname.to_string(), pm.summary.to_string());
-
-            if (current_ts - *ts).num_milliseconds() > 1000 || noticheck != pmcheck {
+            if (current_ts - *ts).num_milliseconds() > 5000 || noticheck != pmcheck {
                 debug!("message: {} | {} : {}", &notification.appname, &notification.summary, &notification.body);
-                add_notification(&notification.appname, &notification.summary, &notification.body);
                 *ts = current_ts;
-                *pm = notification;
+                *pm = notification.clone();
+                add_notification(notification);
             }
             true
         }),
     );
 
+    info!("notifydb: start listening");
+
+    #[cfg(not(feature = "tray_icon"))]
     loop {
-        conn.process(Duration::from_millis(1000)).unwrap_or_else(|_| {
+        conn.process(Duration::from_millis(200)).unwrap_or_else(|_| {
             warn!("connection timed out");
             process::exit(1);
         });
     }
+
+    #[cfg(feature = "tray_icon")]
+    {
+        let check_nofitication = move || {
+            conn.process(Duration::from_millis(200)).unwrap_or_else(|_| {
+                warn!("connection timed out");
+                process::exit(1);
+            });
+            glib::Continue(true)
+        };
+        glib::timeout_add(Duration::from_millis(200), check_nofitication);
+        gtk::main();
+    }
 }
 
 // --| Adds notification to database ------------
-fn add_notification(sender: &str, title: &str, body: &str) {
+fn add_notification(notification: NotificationMsg) {
     let connection = &mut establish_connection();
-    let _ = insert_notification(connection, sender, Some(title), Some(body));
+    let _ = insert_notification(connection, notification);
 }

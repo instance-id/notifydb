@@ -23,7 +23,6 @@ class TableController extends GetxController {
   bool get isSelected => selectedCount.value > 0;
 
   void setNeedsRefresh(bool value) {
-    Logger.debug('rebuildTable: $value');
     _rebuildTable.value = value;
   }
 

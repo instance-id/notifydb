@@ -4,6 +4,10 @@ diesel::table! {
         sender -> Text,
         title -> Nullable<Text>,
         body -> Nullable<Text>,
+        actions -> Nullable<Text>,
+        hints -> Nullable<Text>,
+        icon -> Nullable<Text>,
+        timeout -> Integer,
         unread -> Bool,
         archived -> Bool,
         created_at -> Timestamp,
@@ -21,7 +25,4 @@ diesel::table! {
     }
 }
 
-diesel::allow_tables_to_appear_in_same_query!(
-    notification_data,
-    settings_data,
-);
+diesel::allow_tables_to_appear_in_same_query!(notification_data, settings_data,);

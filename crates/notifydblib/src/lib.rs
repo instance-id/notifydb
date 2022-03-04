@@ -1,9 +1,12 @@
 mod schema;
 
+use std::io::Write;
+use std::path::{Path, PathBuf};
+
 pub use config::*;
+use diesel::connection::SimpleConnection;
 use diesel::dsl::sql;
 use diesel::sql_types::Bool;
-use std::path::{Path, PathBuf};
 
 #[macro_use]
 extern crate lazy_static;
@@ -40,6 +43,10 @@ pub struct NewNotification<'a> {
     sender: &'a str,
     title: Option<&'a str>,
     body: Option<&'a str>,
+    actions: Option<&'a str>,
+    hints: Option<&'a str>,
+    icon: Option<&'a str>,
+    timeout: i32,
     unread: bool,
 }
 
@@ -50,6 +57,10 @@ pub struct Notification {
     sender: String,
     title: Option<String>,
     body: Option<String>,
+    actions: Option<String>,
+    hints: Option<String>,
+    icon: Option<String>,
+    timeout: i32,
     unread: bool,
     archived: bool,
     created_at: NaiveDateTime,
@@ -57,6 +68,7 @@ pub struct Notification {
 }
 
 #[allow(dead_code)]
+#[derive(Clone)]
 pub struct NotificationMsg {
     pub appname: String,
     pub replaces_id: u32,
@@ -112,10 +124,15 @@ pub fn get_config_path(name: &str) -> PathBuf {
     fs::create_dir_all(path.clone()).expect("Failed to create config dir");
 
     if Path::new(&path).exists() {
-        let settings_path = match path.join("settings.toml").to_str() {
+        let mut settings_path = match path.join("settings.toml").to_str() {
             Some(p) => PathBuf::from(p),
             None => std::path::PathBuf::from("settings"),
         };
+
+        if !Path::new(&settings_path).exists() {
+            let settings_file = default_settings(path.clone());
+            settings_path = settings_file;
+        }
 
         debug!("{:?}", settings_path);
         let mut settings = SETTINGS.write().unwrap();
@@ -123,30 +140,17 @@ pub fn get_config_path(name: &str) -> PathBuf {
             warn!("settings merge failed, use default settings, err: {}", err);
         }
     } else {
-        // TODO: create default settings if not exists
-
         warn!("Failed to get config directory or file");
     }
 
     path
 }
 
-// fn set_db_url(db_url: String) -> Result<(), Box<dyn Error>> {
-//     // Set property
-//     SETTINGS.write()?.set("database.databaseUrl", db_url)?;
-//
-//     // Get property
-//     println!("property: {}", SETTINGS.read()?.get::<String>("database.databaseUrl")?);
-//     Ok(())
-// }
-
 // --| Initialize logging -----------------------
 // --|-------------------------------------------
-pub fn init_logging() -> PathBuf {
-    let config_path = get_config_path("notifydb");
-
+pub fn init_logging(config_path: PathBuf) -> PathBuf {
     let mut default_level = LevelFilter::Warn;
-    let settings = SETTINGS.read().unwrap();
+    let mut settings = SETTINGS.write().unwrap();
 
     // --| If env variable is provided, it will override other log level settings --
     if let Ok(v) = env::var("RUST_LOG") {
@@ -154,8 +158,6 @@ pub fn init_logging() -> PathBuf {
     } else if let Ok(l) = settings.get_str("database.logLevel") {
         default_level = LevelFilter::from_str(&l).unwrap();
     }
-
-    println!("default_level: {:?}", default_level);
 
     let logging_config = ConfigBuilder::new().set_location_level(default_level).set_time_to_local(true).build();
     let log_path = config_path.join("notifydb.log");
@@ -173,10 +175,8 @@ pub fn init_logging() -> PathBuf {
     } else {
         db_url = format!("file:{}/notify.db", config_path.to_str().unwrap());
     }
-    println!("Setting database path to: {}", &db_url);
-    // set_db_url(db_url).unwrap();
 
-    setup();
+    settings.set("database.databaseUrl", db_url.clone()).unwrap();
     config_path
 }
 
@@ -186,17 +186,46 @@ pub fn establish_connection() -> SqliteConnection {
     let settings = SETTINGS.read().unwrap();
     let database_url = settings.get_str("database.databaseUrl").unwrap();
 
-    SqliteConnection::establish(&database_url).unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+    let conn = SqliteConnection::establish(&database_url).unwrap_or_else(|_| panic!("Error connecting to {}", database_url));
+
+    conn.batch_execute(
+        "
+    PRAGMA journal_mode = WAL;          -- better write-concurrency
+    PRAGMA synchronous = NORMAL;        -- fsync only in critical moments
+    PRAGMA wal_autocheckpoint = 1000;   -- write WAL changes back every 1000 pages, for an in average 1MB WAL file. May affect readers if number is increased
+    PRAGMA wal_checkpoint(TRUNCATE);    -- free some space by truncating possibly massive WAL files from the last run.
+    PRAGMA busy_timeout = 250;          -- sleep if the database is busy
+    PRAGMA foreign_keys = ON;           -- enforce foreign keys
+",
+    )
+    .map_err(ConnectionError::CouldntSetupConfiguration).expect("Failed to setup database configuration");
+
+    conn
 }
 
 // --| Notifications ----------------------------
 // --|-------------------------------------------
-pub fn insert_notification(conn: &mut SqliteConnection, sender: &str, title: Option<&str>, body: Option<&str>) -> usize {
+pub fn insert_notification(conn: &mut SqliteConnection, notification: NotificationMsg) -> usize {
+    let mut actions = notification.actions.join(";");
+    let mut hints = notification.hints.join(";");
+
+    if actions.is_empty() {
+        actions = "".parse().unwrap();
+    }
+
+    if hints.is_empty() {
+        hints = "".parse().unwrap();
+    }
+
     let new_post = NewNotification {
-        sender,
-        title,
-        body,
-        unread: true,
+        sender: notification.appname.as_str(),
+        title: Some(notification.summary.as_str()),
+        body: Some(notification.body.as_str()),
+        unread: notification.unread,
+        actions: Some(actions.as_str()),
+        hints: Some(hints.as_str()),
+        icon: Some(notification.icon.as_str()),
+        timeout: notification.timeout,
     };
     let result = diesel::insert_into(notification_data::table).values(&new_post).execute(conn);
 
@@ -225,16 +254,52 @@ pub fn get_notification_count() -> i64 {
 }
 
 // --| Get notifications from database ----------
-pub fn get_notifications() -> String {
+pub fn get_notifications(load_count: i64) -> String {
     use crate::notification_data::dsl::*;
 
+    let results: Vec<Notification>;
     let conn = establish_connection();
-    let results = notification_data.filter(unread.eq(true)).load::<Notification>(&conn).expect("Error loading notifications");
+    if load_count == 0 {
+        results = notification_data.filter(unread.eq(true)).load::<Notification>(&conn).expect("Error loading notifications");
+    } else {
+        results = notification_data
+            .filter(unread.eq(true))
+            .limit(load_count)
+            .load::<Notification>(&conn)
+            .expect("Error loading notifications");
+    }
 
     serde_json::to_string(&results).unwrap_or_else(|err| {
         debug!("Error serializing to json: {}", err);
         String::from("Not_found")
     })
+}
+
+// Delete all notifications by id from vector list
+pub fn delete_notifications(ids: Vec<i32>) -> String {
+    use crate::notification_data::dsl::*;
+    let conn = establish_connection();
+    let mut deleted_count = 0;
+
+    for _id in &ids {
+        let result = diesel::delete(notification_data.filter(id.eq(_id))).execute(&conn);
+
+        match result {
+            Ok(_) => {
+                debug!("Deleted notification with id {}", _id);
+                deleted_count += 1;
+            }
+            Err(err) => {
+                error!("Error deleting notification: {}", err);
+            }
+        }
+    }
+
+    if deleted_count == ids.len() {
+        String::from("Success")
+    } else {
+        String::from("Error")
+    }
 }
 
 // --| Mark notifications status as read --------
@@ -311,6 +376,24 @@ pub fn get_settings(app_name: &str) -> String {
     })
 }
 
+pub fn default_settings(settings: PathBuf) -> PathBuf {
+    let settings_path = Path::new(&settings).join("settings.toml");
+
+    let mut settings_file = File::create(&settings_path).unwrap();
+    let settings_toml = r##"
+[database]
+logLevel = "error"
+databaseUrl = "file:{{PATH}}/notify.db"
+
+[viewer]
+# --| Placeholder -----------
+"##;
+
+    let toml = settings_toml.replace("{{PATH}}", &settings.to_str().unwrap());
+    settings_file.write_all(toml.as_bytes()).unwrap();
+    settings_path
+}
+
 pub fn setup() {
     let conn = establish_connection();
 
@@ -320,8 +403,12 @@ pub fn setup() {
             sender VARCHAR NOT NULL,
             title VARCHAR NOT NULL,
             body TEXT NOT NULL,
-            created_at TIMESTAMP UNIQUE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            actions TEXT,
+            hints TEXT,
+            icon TEXT,
+            timeout INTEGER,
+            created_at TIMESTAMP UNIQUE NOT NULL DEFAULT(STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')),
+            updated_at TIMESTAMP NOT NULL DEFAULT(STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')),
             archived BOOLEAN NOT NULL DEFAULT 0,
             unread BOOLEAN NOT NULL DEFAULT 0
         );"#;
@@ -334,24 +421,17 @@ pub fn setup() {
             id INTEGER NOT NULL PRIMARY KEY,
             application VARCHAR UNIQUE NOT NULL,
             settings_json TEXT NOT NULL,
-            created_at TIMESTAMP UNIQUE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP UNIQUE NOT NULL DEFAULT(STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')),
+            updated_at TIMESTAMP NOT NULL DEFAULT(STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW'))
           );"#;
 
     let index_schema = r#"
         CREATE UNIQUE INDEX application_name ON settings_data(application);"#;
 
     let insert_settings = r#"
-        INSERT INTO settings_data (application, settings_json) VALUES ('notifydb', '{
-          "appName": "notifydb",
-          "settings": {
-            "animations": "true",
-            "autoRefresh": "true",
-            "autoRefreshInterval": 3,
-            "refreshOnMarkAsRead": "true",
-            "logLevel": "error"
-          }
-        }');"#;
+        INSERT INTO settings_data (application, settings_json)
+        VALUES ('notifydb','{"appName":"notifydb","settings":{"autoRefresh":"true","autoRefreshInterval":3,"refreshOnMarkAsRead":"false","animations":"true","maxLoadedMessages":1000,"maxPerPage":100,"deleteReadMessages":"true","logLevel":"error"}}');
+        "#;
 
     match select(sql::<Bool>(
         "EXISTS \

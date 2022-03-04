@@ -25,11 +25,14 @@ class AppSettings with _$AppSettings {
 @freezed
 class Settings with _$Settings {
   const factory Settings({
+    @Default('true') String? animations,
     @Default('true') String? autoRefresh,
     @Default(3) int? autoRefreshInterval,
-    @Default('true') String? refreshOnMarkAsRead,
-    @Default('true') String? animations,
+    @Default('false') String? refreshOnMarkAsRead,
     @Default('error') String? logLevel,
+    @Default(1000) int? maxLoadedMessages,
+    @Default(50) int? maxPerPage,
+    @Default('true') String? deleteReadMessages,
     @Default('') String? windowSize,
   }) = _Settings;
 

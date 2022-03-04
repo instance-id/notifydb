@@ -6,16 +6,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono       = {version = "0.4", features = ["serde"]}
-chrono-tz    = "0.6"
-dotenv       = "0.15"
-serde        = {version = "1.0", features = ["derive", ]}
-serde_derive = "1.0"
-serde_json   = "1.0"
-diesel       = { version = "1.4.0",features = ["sqlite", "chrono"]}
-config       = {version = "0.11", features = ["toml", "json"]}
-toml         = "0.5.8"
+chrono       = { version = "0.4.19", features = ["serde"] }
+chrono-tz    = "0.6.1"
+dotenv       = "0.15.0"
+serde        = { version = "1.0.136", features = ["derive", ] }
+serde_derive = "1.0.136"
+serde_json   = "1.0.79"
+diesel       = { version = "1.4.8", features = ["sqlite", "chrono"] }
+config       = { version = "0.11.0", features = ["toml", "json"] }
+toml         = {version = "0.5.8"}
 lazy_static  = "1.4.0"
-log          = "0.4"
-simplelog    = { version = "^0.11.0", features = ["paris"] }
+log          = "0.4.14"
+simplelog    = { version = "0.11.2", features = ["paris"] }
 env_logger   = "0.9.0"

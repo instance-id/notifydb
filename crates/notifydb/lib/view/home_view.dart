@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:get/get.dart';
-import 'package:libadwaita/libadwaita.dart';
 import 'package:nativeshell/nativeshell.dart';
 
 import '../controllers/data_controller.dart';
@@ -8,15 +8,16 @@ import '../controllers/main_controller.dart';
 import '../controllers/table_controller.dart';
 import '../utils/ColorUtil.dart';
 import '../utils/logger.dart';
+import '../widgets/adw_custom_flap.dart';
 import '../widgets/table/table_view.dart';
 import 'settings_flap.dart';
 
-class Home extends StatelessWidget {
+class Home extends HookWidget {
   Home({Key? key}) : super(key: key);
 
-  late final MainController mainController = Get.find<MainController>();
-  late final TableController tableController = Get.find<TableController>();
-  late final DataController dataController = Get.find<DataController>();
+  final MainController mainController = Get.find<MainController>();
+  final TableController tableController = Get.find<TableController>();
+  final DataController dataController = Get.find<DataController>();
 
   Future<void> markSelected() async {
     var selectedIds = tableController.selectedIds();
@@ -43,35 +44,83 @@ class Home extends StatelessWidget {
 
   Widget enabledRefresh() {
     return Tooltip(
-      message: 'Click to refresh notifications',
+      message: 'Click to refresh notifications. Long press to switch to automatic refresh.',
       decoration: ttTheme,
       textStyle: ttText,
       waitDuration: Duration(milliseconds: 900),
-      child: IconButton(
-        padding: EdgeInsets.fromLTRB(8, 8, 14, 8),
-        icon: Icon(Icons.update),
-        onPressed: () => dataController.refreshNotifications('all', tableController.setNeedsRefresh),
+      child: GestureDetector(
+        onLongPress: () => dataController.setAutoRefresh(!dataController.autoRefresh),
+        child: IconButton(
+          color: Colors.white60,
+          padding: EdgeInsets.fromLTRB(8, 8, 14, 8),
+          icon: Icon(Icons.update),
+          onPressed: () => dataController.refreshNotifications('all', tableController.setNeedsRefresh),
+        ),
       ),
     );
   }
 
   Widget disabledRefresh() {
     return Tooltip(
-      message: 'Auto Refresh Enabled',
-      decoration: ttTheme,
-      textStyle: ttText,
-      waitDuration: Duration(milliseconds: 900),
-      child: IconButton(
-        color: Colors.black38,
-        padding: EdgeInsets.fromLTRB(8, 8, 14, 8),
-        icon: Icon(Icons.update),
-        onPressed: () => {},
-      ),
-    );
+        message: 'Auto Refresh Enabled. Long press to switch to manual refresh.',
+        decoration: ttTheme,
+        textStyle: ttText,
+        waitDuration: Duration(milliseconds: 900),
+        child: GestureDetector(
+          onLongPress: () => dataController.setAutoRefresh(!dataController.autoRefresh),
+          child: Stack(
+            children: [
+              IconButton(
+                color: Colors.black38,
+                padding: EdgeInsets.fromLTRB(8, 8, 14, 8),
+                icon: Icon(Icons.update),
+                onPressed: () => {},
+              ),
+              Positioned(
+                right: 15,
+                top: 18,
+                child: Text(
+                  'Auto',
+                  style: TextStyle(color: Colors.white38, fontSize: 9),
+                ),
+              ),
+            ],
+          ),
+        ));
+  }
+
+  void initializeListener(AnimationController controller) {
+    controller.addListener(() {
+      controller.status == AnimationStatus.forward
+          ? mainController.animatingForward = true
+          : mainController.animatingForward = false;
+
+      if (mainController.animatingForward && controller.value > 0.1) {
+        tableController.rebuildCallback.call();
+      }
+
+      if (!mainController.animatingForward && controller.value < 0.9) {
+        tableController.rebuildCallback.call();
+      }
+
+      if (controller.isCompleted) {
+        Future.delayed(Duration(milliseconds: 100), () {
+          mainController.animatingForward = false;
+          tableController.rebuildCallback.call();
+        });
+      }
+    });
   }
 
   @override
   Widget build(context) {
+    final controller = useAnimationController(duration: mainController.duration);
+
+    if (!mainController.calledOnce) {
+      mainController.calledOnce = true;
+      initializeListener(controller);
+    }
+
     return IntrinsicSizedBox(
       child: Scaffold(
         appBar: AppBar(
@@ -124,11 +173,12 @@ class Home extends StatelessWidget {
 
         // --| Body ----------------------------------
         body: Stack(children: <Widget>[
-          AdwFlap(
-            style: FlapStyle(
+          AdwCustomFlap(
+            animationController: controller,
+            style: FlapCustomStyle(
               locked: false,
               flapWidth: 245,
-              foldPolicy: FoldPolicy.never,
+              foldPolicy: CustomFoldPolicy.never,
             ),
             controller: mainController.flapController,
             // --| Settings --------------------------
@@ -146,7 +196,7 @@ class Home extends StatelessWidget {
                 child: Icon(
                   Icons.check,
                   color: Colors.black54,
-                  size: 24,
+                  size: 20,
                 ),
               )
             : Container()),

@@ -14,8 +14,10 @@ import '../../utils/logger.dart';
 
 import 'message_details.dart';
 import 'custom_column_menu.dart';
-import 'custom_filter.dart';
+import 'message_text_filter.dart';
+import 'sender_name_filter.dart';
 import 'custom_footer.dart';
+import 'title_text_filter.dart';
 
 class TableView extends StatefulWidget {
   const TableView({Key? key}) : super(key: key);
@@ -46,6 +48,9 @@ class _TableViewState extends State<TableView> {
   late Color headerBackgroundColor;
   late Color gridBackgroundColor;
   late Color gridBorderColor;
+  late Color filterBorderColor;
+  late Color cellColorInEditState;
+  late Color activatedBorderColor;
   late Color cellTextStyle;
   late Color footerBackgroundColor;
   late Color tableOuterBackgroundColor;
@@ -88,6 +93,7 @@ class _TableViewState extends State<TableView> {
         enableContextMenu: false,
         enableSorting: false,
         enableColumnDrag: false,
+        // enableFilterMenuItem: false,
       ),
       PlutoColumn(
         title: 'Title',
@@ -96,6 +102,16 @@ class _TableViewState extends State<TableView> {
         readOnly: true,
         enableSorting: false,
         enableColumnDrag: false,
+        enableContextMenu: false,
+        enableDropToResize: true,
+        enableFilterMenuItem: true,
+        titleSpan: TextSpan(
+          text: 'Title',
+          recognizer: TapGestureRecognizer()
+            ..onTapUp = (event) {
+              setShowFilterInput();
+            },
+        ),
       ),
       PlutoColumn(
         title: 'Message',
@@ -103,6 +119,20 @@ class _TableViewState extends State<TableView> {
         type: PlutoColumnType.text(),
         readOnly: true,
         enableColumnDrag: false,
+        enableSorting: false,
+        enableAutoEditing: false,
+        enableHideColumnMenuItem: false,
+        enableDropToResize: false,
+        enableSetColumnsMenuItem: false,
+        enableContextMenu: false,
+        enableFilterMenuItem: true,
+        titleSpan: TextSpan(
+          text: 'Message',
+          recognizer: TapGestureRecognizer()
+            ..onTapUp = (event) {
+              setShowFilterInput();
+            },
+        ),
       ),
       PlutoColumn(
         title: 'Sent Date',
@@ -115,6 +145,7 @@ class _TableViewState extends State<TableView> {
         enableContextMenu: false,
         enableSorting: false,
         enableColumnDrag: false,
+        enableFilterMenuItem: false,
       ),
       PlutoColumn(
         title: 'Status',
@@ -128,6 +159,7 @@ class _TableViewState extends State<TableView> {
         enableContextMenu: false,
         enableSorting: false,
         enableColumnDrag: false,
+        enableFilterMenuItem: false,
       ),
     ];
   }
@@ -143,9 +175,14 @@ class _TableViewState extends State<TableView> {
   @override
   void initState() {
     Logger.debug('TableView.initState');
+    tableController.rebuildCallback = () => columnSizer();
+
     headerBackgroundColor = GetColor.parse(settings.headerBackgroundColor!);
     gridBackgroundColor = GetColor.parse(settings.gridBackgroundColor!);
     gridBorderColor = GetColor.parse(settings.gridBorderColor!);
+    filterBorderColor = GetColor.parse(settings.filterBorderColor!);
+    cellColorInEditState = GetColor.parse(settings.cellColorInEditState!);
+    activatedBorderColor = GetColor.parse(settings.activatedBorderColor!);
     cellTextStyle = GetColor.parse(settings.cellTextStyle!);
     footerBackgroundColor = GetColor.parse(settings.footerBackgroundColor!);
     tableOuterBackgroundColor = GetColor.parse(settings.tableOuterBackgroundColor!);
@@ -165,8 +202,8 @@ class _TableViewState extends State<TableView> {
     super.dispose();
   }
 
-  // --| Utility Functions ---------------------------------
-  // --|----------------------------------------------------
+  // --| Utility Functions --------------------------------
+  // --|---------------------------------------------------
   void columnSizer() {
     needsUpdate = false;
     if (priorOffset != stateManager.rightBlankOffset) {
@@ -178,6 +215,16 @@ class _TableViewState extends State<TableView> {
       stateManager.resizeColumn(columns[3], stateManager.rightBlankOffset);
       needsUpdate = false;
     }
+  }
+
+  // --| Column Filters -----------------------------------
+  // --|---------------------------------------------------
+
+  var filterShown = false;
+
+  void setShowFilterInput() {
+    filterShown = !filterShown;
+    stateManager.setShowColumnFilter(filterShown);
   }
 
   bool checkFiltered() {
@@ -232,8 +279,8 @@ class _TableViewState extends State<TableView> {
         : tableController.setShownCount(stateManager.refRows.filteredList.length);
   }
 
-  // --| Populate rows -------------------------------------
-  // --|----------------------------------------------------
+  // --| Populate rows ------------------------------------
+  // --|---------------------------------------------------
   void buildNotificationList() {
     Logger.debug('build notification list');
 
@@ -337,7 +384,6 @@ class _TableViewState extends State<TableView> {
         hasChanged = true;
         stateManager.setPage(1, notify: false);
         // --|-------------------------------------------------------
-
         stateManager.notifyListenersOnPostFrame();
         stateManager.addListener(() => columnSizer());
       },
@@ -346,21 +392,33 @@ class _TableViewState extends State<TableView> {
         hasChanged = true;
       },
       configuration: PlutoGridConfiguration.dark(
-          gridBackgroundColor: gridBackgroundColor,
-          gridBorderColor: gridBorderColor,
-          enableColumnBorder: true,
-          cellTextStyle: TextStyle(color: cellTextStyle, fontSize: 12),
-          rowHeight: 30,
-          columnHeight: 30,
-          footerCustomHeight: 35,
-          scrollbarConfig: PlutoGridScrollbarConfig(
-            scrollbarThickness: 10.0,
-            scrollbarThicknessWhileDragging: 10.0,
-            isAlwaysShown: false,
-          ),
-          columnFilterConfig: PlutoGridColumnFilterConfig(filters: [
-            SenderNameFilter(),
-          ])),
+        gridBackgroundColor: gridBackgroundColor,
+        gridBorderColor: gridBorderColor,
+        filterBorderColor: filterBorderColor,
+        cellColorInEditState: cellColorInEditState,
+        activatedBorderColor: activatedBorderColor,
+        enableColumnBorder: true,
+        cellTextStyle: TextStyle(color: cellTextStyle, fontSize: 12),
+        rowHeight: 30,
+        columnHeight: 30,
+        columnFilterHeight: 30,
+        footerCustomHeight: 35,
+        scrollbarConfig: PlutoGridScrollbarConfig(
+          scrollbarThickness: 10.0,
+          scrollbarThicknessWhileDragging: 10.0,
+          isAlwaysShown: false,
+        ),
+        columnFilterConfig: PlutoGridColumnFilterConfig(
+          filters: [SenderNameFilter(), TitleTextFilter(), MessageTextFilter(), PlutoFilterTypeContains()],
+          resolveDefaultColumnFilter: (column, resolver) {
+            if (column.title == 'Title') {
+              return resolver<TitleTextFilter>() as PlutoFilterType;
+            } else if (column.title == 'Message') {
+              return resolver<MessageTextFilter>() as PlutoFilterType;
+            } else { return resolver<PlutoFilterTypeContains>() as PlutoFilterType; }
+          },
+        ),
+      ),
       mode: PlutoGridMode.selectWithOneTap,
       onSelected: (PlutoGridOnSelectedEvent event) {
         Logger.debug('onSelected');
@@ -395,7 +453,8 @@ class _TableViewState extends State<TableView> {
       },
       createFooter: (stateManager) {
         Logger.debug('createFooter');
-        stateManager.setPageSize(100, notify: false);
+        var data = Get.find<DataController>();
+        stateManager.setPageSize(data.maxPerPage, notify: false);
         return Container(
             padding: EdgeInsets.all(0),
             margin: EdgeInsets.all(0),

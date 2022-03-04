@@ -13,7 +13,7 @@ class Notification {
   final String? actions;
   final String? hints;
   final String? icon;
-  final String? timeout;
+  final int? timeout;
   final String? created_at;
 
   String get Created_at => modifyDate(created_at!);

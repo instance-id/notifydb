@@ -30,7 +30,6 @@ class SettingsData with _$SettingsData {
 class Database with _$Database {
   const factory Database({
     @Default('warning') String? logLevel,
-    @Default(false) bool? debug,
   }) = _Database;
 
   factory Database.fromJson(Map<String, dynamic> json) => _$DatabaseFromJson(json);
@@ -39,19 +38,20 @@ class Database with _$Database {
 @freezed
 class Viewer with _$Viewer {
   const factory Viewer({
-    @Default('#303030') String? activatedBorderColor,
+    @Default('#B7B8B9AA') String? activatedBorderColor,
     @Default('#303030') String? activatedColor,
     @Default('#303030') String? borderColor,
     @Default('#303030') String? cellColorInEditState,
-    @Default('#303030') String? cellColorInReadOnlyState,
-    @Default('#303030') String? cellTextStyle,
+    @Default('#282828') String? cellColorInReadOnlyState,
+    @Default('#282828') String? filterBorderColor,
+    @Default('#D7D3CE') String? cellTextStyle,
     @Default('#303030') String? checkedColor,
-    @Default('#313131') String? footerBackgroundColor,
+    @Default('#282828') String? footerBackgroundColor,
     @Default('#303030') String? gridBackgroundColor,
     @Default('#363636') String? gridBorderColor,
-    @Default('#D7D3CE') String? headerBackgroundColor,
+    @Default('#282828') String? headerBackgroundColor,
     @Default('#303030') String? inactivatedBorderColor,
-    @Default('#4d8bff4d') String? selectedRowColor,
+    @Default('#003eb341') String? selectedRowColor,
     @Default('#212121') String? tableOuterBackgroundColor,
   }) = _Viewer;
 

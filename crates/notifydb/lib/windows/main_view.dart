@@ -33,16 +33,6 @@ class _MainViewState extends State<MainView> {
   }
 
   //@formatter:off
-  Future<void> windowAction(String action, LocalWindow window) async {
-    switch (action) {
-      case 'hide': await window.setMinimized(true); break;
-      case 'restore': await window.setMinimized(false); break;
-      case 'quit': await window.close(); break;
-      default:
-    }
-  } //@formatter:on
-
-  //@formatter:off
   DecoratedCloseButton closeHandler({void Function()? onTap}) {
     return DecoratedCloseButton(width: 25, height: 25,
       type: _currentThemeType,
@@ -79,7 +69,7 @@ class _MainViewState extends State<MainView> {
           ),
           // --| Right Side Column ---------
           // --|----------------------------
-              //@formatter:off
+          //@formatter:off
           Expanded(flex: 80,
               child: Obx(() =>
               dataController.isReady
@@ -87,8 +77,6 @@ class _MainViewState extends State<MainView> {
                   : LoadingView()
               )),
           //@formatter:on
-          // Home()
-          // ),
         ],
       )),
     );
@@ -132,9 +120,6 @@ class _MainViewState extends State<MainView> {
                 padding: EdgeInsets.only(left: 0, right: 0),
                 titlebarSpace: 5,
                 window: window,
-                // closeBtn: (void Function()? onTap) => closeHandler(onTap: onTap),
-                // minimizeBtn: (void Function()? onTap) => minimizeHandler(onTap: onTap),
-                // maximizeBtn: (void Function()? onTap) => maximizeHandler(onTap: onTap),
                 start: [
                   Builder(builder: (context) {
                     return AdwHeaderButton(

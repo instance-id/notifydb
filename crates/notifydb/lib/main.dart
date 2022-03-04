@@ -1,18 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
-import 'package:nativeshell/nativeshell.dart';
-import 'package:nativeshell/src/window_method_channel.dart';
-import 'package:adwaita/adwaita.dart';
-import 'package:notifydb/utils/logger.dart';
-import 'package:notifydb/windows/main_view.dart';
 import 'package:get/get.dart';
+import 'package:adwaita/adwaita.dart';
+import 'package:flutter/material.dart';
+import 'package:notifydb/utils/logger.dart';
+import 'package:nativeshell/nativeshell.dart';
+import 'package:notifydb/windows/main_view.dart';
 
 import 'controllers/data_controller.dart';
 import 'controllers/logging_controller.dart';
 import 'controllers/table_controller.dart';
 import 'controllers/main_controller.dart';
-
-GetIt getIt = GetIt.instance;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

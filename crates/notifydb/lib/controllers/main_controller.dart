@@ -7,6 +7,9 @@ import 'package:get/get.dart';
 import 'package:libadwaita/libadwaita.dart';
 import 'package:nativeshell/nativeshell.dart';
 
+import '../widgets/custom_flap_controller.dart';
+import 'table_controller.dart';
+
 class MainController extends GetxController {
   late WindowState windowState;
   var scaffoldKey = GlobalKey<ScaffoldState>();
@@ -26,7 +29,12 @@ class MainController extends GetxController {
   }
 
   // --| Settings Flap ---------------------
-  final flapController = FlapController();
+  late AnimationController animationController;
+  final flapController = CustomFlapController();
+  final Duration duration = Duration(milliseconds: 500);
+  var animatingForward = true;
+  var calledOnce = false;
+
   final _showRefreshButton = false.obs;
 
   get showRefreshButton => _showRefreshButton.value;
@@ -36,16 +44,19 @@ class MainController extends GetxController {
       value = r;
     });
   }
+
   // --|------------------------------------
 
-  bool _toggle = false;
+  final _settingsMenu = false.obs;
 
-  void toggleDrawer() {
-    _toggle = !_toggle;
-    if (_toggle) {
-      scaffoldKey.currentState?.openDrawer();
+  bool get settingsMenu => _settingsMenu.value;
+
+  void toggleSettings() {
+    _settingsMenu.value = !_settingsMenu.value;
+    if (settingsMenu) {
+      flapController.open();
     } else {
-      scaffoldKey.currentState?.openEndDrawer();
+      flapController.close();
     }
   }
 
@@ -54,6 +65,21 @@ class MainController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // flapController.addListener(() {
+    //   Future.delayed(Duration(milliseconds: 300), () {
+    //     Get.find<TableController>().stateManager.notifyListeners();
+    //   });
+    // });
+  }
+
+  @override
+  onClose() {
+    super.onClose();
+    // flapController.removeListener(() {
+    //   Future.delayed(Duration(milliseconds: 300), () {
+    //     Get.find<TableController>().stateManager.notifyListeners();
+    //   });
+    // });
   }
 
   void initialize(BuildContext context) async {

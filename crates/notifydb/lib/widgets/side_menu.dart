@@ -24,13 +24,13 @@ class NavigationSideBar extends StatelessWidget {
           labelType: NavigationRailLabelType.selected,
           destinations: [
             NavigationRailDestination(
-              icon: Icon(Icons.all_inbox),
-              selectedIcon: Icon(Icons.all_inbox_outlined),
+              icon: Icon(Icons.all_inbox, color: Colors.white.withOpacity(0.8)),
+              selectedIcon: Icon(Icons.all_inbox_outlined, color: Colors.blue.withOpacity(0.8)),
               label: Text('View All'),
             ),
             NavigationRailDestination(
-              icon: Icon(Icons.account_tree),
-              selectedIcon: Icon(Icons.account_tree_outlined),
+              icon: Icon(Icons.account_tree, color: Colors.white.withOpacity(0.8)),
+              selectedIcon: Icon(Icons.account_tree_outlined, color: Colors.blue.withOpacity(0.8)),
               label: Text('By Source'),
             ),
           ],
@@ -41,12 +41,13 @@ class NavigationSideBar extends StatelessWidget {
           right: 0,
           height: 52,
           child: Material(
-            child: IconButton(
-              iconSize: 25,
-              icon: Icon(Icons.settings),
-              onPressed: () => mainController.flapController.toggle(),
-            ),
-          ),
+              child: Obx(
+            () => IconButton(
+                color: mainController.settingsMenu ? Colors.blue.withOpacity(0.8) : Colors.white.withOpacity(0.8),
+                iconSize: 25,
+                icon: Icon(Icons.settings),
+                onPressed: () => mainController.toggleSettings()),
+          )),
         ),
       ],
     );

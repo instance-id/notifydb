@@ -14,11 +14,12 @@ LISTENER="notifydb_listener"
 
 LISTENERSRC="$BASEPATH/target/debug/$LISTENER"
 LISTENERDEST="$HOME/.config/notifydb"
+source $ENVFILE
 
-# diesel migration run
+diesel migration run
 
 function notifykill(){
-    ps aux | grep -v grep | grep -v build | grep "$LISTENER" | awk '{print $2}' | xargs kill -9
+    ps aux | grep -v grep | grep -v build | grep "$LISTENER" | awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
 }
 
 echo "Stopping notifydb..."
