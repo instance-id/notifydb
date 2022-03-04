@@ -107,7 +107,6 @@ fn main() -> () {
         process::exit(1);
     });
 
-
     conn.start_receive(
         mr,
         Box::new(|msg, _| {
@@ -153,7 +152,7 @@ fn main() -> () {
 
     #[cfg(not(feature = "tray_icon"))]
     loop {
-        conn.process(Duration::from_millis(200)).unwrap_or_else(|_| {
+        conn.process(Duration::from_millis(1000)).unwrap_or_else(|_| {
             warn!("connection timed out");
             process::exit(1);
         });

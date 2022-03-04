@@ -253,18 +253,6 @@ class DataController extends GetxController {
         });
   }
 
-  Future<void> GetAppSettings() async {
-    try { //@formatter:off
-      var settings = getSettings('viewer');
-      await settings.then((value) {
-        _settings_data = value;
-        setLogLevel(_settings_data.database.logLevel ?? 'error');
-        Logger.debug('Received settings: $settings');
-      });
-    }
-    catch (e) {Future.microtask(() => print(e.toString())); Logger.error(e.toString()); }
-  } //@formatter:on
-
   Future<void> GetSettings() async {
     try { //@formatter:off
       var settings = getSettings('viewer');
